@@ -13,6 +13,17 @@
           Reads in points from a Gadget binary file.
         </Documentation>
       </StringVectorProperty>
+      
+      
+      <StringVectorProperty
+        name="FilePrefix"
+        command="SetFilePrefix"
+        number_of_elements="1">
+        <FileListDomain name="files"/>
+        <Documentation>
+          If this is set, the value is taken to be a prefix of a series of gadget files.
+        </Documentation>
+      </StringVectorProperty>
 
       <StringVectorProperty
          name="PointArrayInfo"

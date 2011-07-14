@@ -46,6 +46,10 @@ public:
 	vtkSetStringMacro(FileName);
  	vtkGetStringMacro(FileName);
 
+  
+  vtkSetStringMacro(FilePrefix);
+ 	vtkGetStringMacro(FilePrefix);
+
 	
 	// Description:
   // Set/Get the LUnit
@@ -111,6 +115,8 @@ protected:
   vtkGadgetReader();
   ~vtkGadgetReader();
 	char* FileName;
+  char* FilePrefix;
+
 	double LUnit;
   double MUnit;
 	bool Format;
@@ -128,17 +134,9 @@ protected:
   vtkSmartPointer<vtkPoints>      Positions;
   vtkSmartPointer<vtkCellArray>   Vertices;
 
-  vtkSmartPointer<vtkDoubleArray>   Potential;
   vtkSmartPointer<vtkDoubleArray>   Mass;
-  vtkSmartPointer<vtkDoubleArray>   EPS;
-  vtkSmartPointer<vtkDoubleArray>   RHO;
-  vtkSmartPointer<vtkDoubleArray>   Hsmooth;
-  vtkSmartPointer<vtkDoubleArray>   Temperature;
-  vtkSmartPointer<vtkDoubleArray>   Metals;
-  vtkSmartPointer<vtkDoubleArray>   Tform;
 	vtkSmartPointer<vtkDoubleArray>		 Type;
-	
-	vtkSmartPointer<vtkDoubleArray>		 Age;
+	vtkSmartPointer<vtkDoubleArray>		 Energy;
   vtkSmartPointer<vtkDoubleArray>   Velocity;
 
 	
