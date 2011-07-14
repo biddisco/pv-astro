@@ -1,0 +1,117 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="sources">
+    <SourceProxy name="GadgetReader"
+					 class="vtkGadgetReader">
+
+
+      <StringVectorProperty
+        name="AaaFileName"
+        command="SetFileName"
+        number_of_elements="1">
+        <FileListDomain name="files"/>
+        <Documentation>
+          Reads in points from a Gadget binary file.
+        </Documentation>
+      </StringVectorProperty>
+
+      <StringVectorProperty
+         name="PointArrayInfo"
+         information_only="1">
+        <ArraySelectionInformationHelper attribute_name="Point"/>
+      </StringVectorProperty>
+
+      <StringVectorProperty
+         name="PointArrayStatus"
+         command="SetPointArrayStatus"
+         number_of_elements="0"
+         repeat_command="1"
+         number_of_elements_per_command="2"
+         element_types="2 0"
+         information_property="PointArrayInfo"
+         label="Point Arrays">
+        <ArraySelectionDomain name="array_list">
+          <RequiredProperties>
+            <Property name="PointArrayInfo" function="ArrayList"/>
+          </RequiredProperties>
+        </ArraySelectionDomain>
+        <Documentation>
+          This property lists which point attributes to read.
+        </Documentation>
+      </StringVectorProperty>
+
+	  <DoubleVectorProperty
+			name="LUnit"
+			command="SetLUnit"
+			number_of_elements="1"
+			default_values="1">
+			
+			<Documentation>
+				conversion factor to obtain Mpc/h
+
+			</Documentation>
+	  </DoubleVectorProperty>
+	
+	
+	  <DoubleVectorProperty
+			name="MUnit"
+			command="SetMUnit"
+			number_of_elements="1"
+			default_values="1">
+			
+			<Documentation>
+				conversion factor to obtain Msun/h
+
+			</Documentation>
+	  </DoubleVectorProperty>
+	
+	  <IntVectorProperty name="Format"
+        command="SetFormat"
+        number_of_elements="1"
+        default_values="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+		either checked (GADGET2) or unchecked (GADGET1)
+		   
+		</Documentation>
+      </IntVectorProperty>
+
+
+
+	  <IntVectorProperty name="Swap"
+        command="SetSwap"
+        number_of_elements="1"
+        default_values="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+		either checked (perform byteswap) or unchecked (no byteswap)    
+		</Documentation>
+      </IntVectorProperty>
+	
+
+	  <IntVectorProperty name="LGadget"
+        command="SetLGadget"
+        number_of_elements="1"
+        default_values="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+		 either checked (long IDs in GADGET file) or unchecked (int IDs in GADGET file)
+		</Documentation>
+      </IntVectorProperty>
+
+
+	  <IntVectorProperty name="DGadget"
+        command="SetDGadget"
+        number_of_elements="1"
+        default_values="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+		 either checked (double precision GADGET file) or unchecked (float precision GADGET file)
+		</Documentation>
+      </IntVectorProperty>
+
+
+
+    </SourceProxy>
+  </ProxyGroup>
+</ServerManagerConfiguration>
+

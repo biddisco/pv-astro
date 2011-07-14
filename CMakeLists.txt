@@ -10,8 +10,11 @@ INCLUDE(${PARAVIEW_USE_FILE})
 # AstroViz plugin
 # INCLUDES
 #   o Tipsy binary reader
-#   o color bars equivalent to thos available in tipsy
-#   o smoothing filter
+#   o Ramses binary reader
+#   o Grafic binary reader
+#   o Gadget binary reader 
+#   o color bars equivalent to those available in tipsy
+#   o smoothing filter (recommended to use pv-meshless SPH Smooth utility)
 #   o center of mass filter 
 #   o moments of inertia filter
 #   o profile filter
@@ -29,6 +32,7 @@ INCLUDE(${PARAVIEW_USE_FILE})
 
 
 INCLUDE_DIRECTORIES(AstroVizHelpersLib)
+INCLUDE_DIRECTORIES(gadget)
 #INCLUDE_DIRECTORIES(fio)
 
 # for special gui
@@ -63,13 +67,14 @@ ADD_PARAVIEW_PLUGIN(AstroVizPlugin "1.1"
 		vtkFriendsOfFriendsHaloFinder.cxx 
 		#vtkPointDisplay.cxx
 		vtkRamsesReader.cxx
+		vtkGadgetReader.cxx
 		vtkGraficReader.cxx		
 		#vtkSQLiteReader.cxx
 		#vtkSQLiteReader2.cxx
 		#vtkTrackFilter.cxx
 		#vtkTrackFilter2.cxx
 		vtkSimpleBin.cxx
-		vtkRamsesReader.cxx
+		#vtkRamsesReader.cxx
 
 	SERVER_MANAGER_XML
 		TipsyReaderSM.xml
@@ -88,6 +93,7 @@ ADD_PARAVIEW_PLUGIN(AstroVizPlugin "1.1"
 		#TrackFilter2SM.xml
 		SimpleBinSM.xml
 		RamsesReaderSM.xml
+		GadgetReaderSM.xml
 
 	GUI_RESOURCES
 		TipsyReader.qrc
@@ -95,7 +101,7 @@ ADD_PARAVIEW_PLUGIN(AstroVizPlugin "1.1"
 		SQLiteReader.qrc
 		SQLiteReader2.qrc
 		RamsesReader.qrc
-
+		GadgetReader.qrc
 		GraficReader.qrc		
 	GUI_RESOURCE_FILES
 		AstroVizFilterMenu.xml
@@ -163,9 +169,21 @@ ADD_LIBRARY(
 SET_TARGET_PROPERTIES(fio PROPERTIES LINKER_LANGUAGE C)
 SET_TARGET_PROPERTIES(fio PROPERTIES COMPILE_FLAGS "-fPIC")
 
+# For the gadget reader plugin
+ADD_LIBRARY(
+  gadget
+  STATIC
+  gadget/utility.c
+)
+
+SET_TARGET_PROPERTIES(gadget PROPERTIES LINKER_LANGUAGE C)
+SET_TARGET_PROPERTIES(gadget PROPERTIES COMPILE_FLAGS "-fPIC")
+
+
 TARGET_LINK_LIBRARIES(
 	AstroVizPlugin
 	fio
+  gadget
 	TipsyHelpers
 	SQLitelib
 	#gmp

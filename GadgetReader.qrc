@@ -1,0 +1,5 @@
+<RCC>
+	<qresource prefix="/ParaViewResources">
+		<file>GadgetReaderGUI.xml</file>
+	</qresource>
+</RCC>

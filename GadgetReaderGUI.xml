@@ -1,0 +1,6 @@
+<ParaViewReaders>
+	<Reader name="GadgetReader"
+			extensions="gdg"
+			file_description="Gadget Binary">
+	</Reader>
+</ParaViewReaders>
