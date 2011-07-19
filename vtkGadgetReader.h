@@ -157,7 +157,8 @@ private:
 	// in the output vector
 	void AllocateAllGadgetVariableArrays(vtkIdType numBodies,
 																			vtkPolyData* output);
-  int ReadGadget(FILE *icfile, vtkPolyData *output);
+  int ReadGadgetAllFiles();
+  int ReadGadget(FILE *icfile);
   long GetPid(int i);
 //ETX
 

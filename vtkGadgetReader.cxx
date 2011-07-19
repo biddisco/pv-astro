@@ -43,10 +43,6 @@ vtkStandardNewMacro(vtkGadgetReader);
  *                              COMMON DEFINES
  *=============================================================================*/
 
-double       GADGET_LUNIT;
-double       GADGET_MUNIT;
-int          LGADGET;
-int          DGADGET;
 unsigned int blklen;
 
 #define MAXSTRING          2048 
@@ -417,95 +413,53 @@ void vtkGadgetReader::PrintSelf(ostream& os, vtkIndent indent)
 void vtkGadgetReader::AllocateAllGadgetVariableArrays(vtkIdType numBodies,
 	vtkPolyData* output)
 {
-  if(this->Positions == NULL) {
-    // We are creating arrays for the first time
-    // Allocate objects to hold points and vertex cells. 
-    this->Positions = vtkSmartPointer<vtkPoints>::New();
-    this->Positions->SetDataTypeToFloat();
-    this->Positions->SetNumberOfPoints(numBodies);
-    //
-    this->Vertices  = vtkSmartPointer<vtkCellArray>::New();
-    vtkIdType *cells = this->Vertices->WritePointer(numBodies, numBodies*2);
-    for (vtkIdType i=0; i<numBodies; ++i) {
-      cells[i*2]   = 1;
-      cells[i*2+1] = i;
-    }
-
-    //
-    this->GlobalIds = vtkSmartPointer<vtkIdTypeArray>::New();
-    this->GlobalIds->SetName("global_id");
-    this->GlobalIds->SetNumberOfComponents(1);
-    this->GlobalIds->SetNumberOfTuples(numBodies);
-    this->GlobalIds->FillComponent(0, 0.0);
-    
-    output->GetPointData()->AddArray(this->GlobalIds);
-
-   // Storing the points and cells in the output data object.
-    output->SetPoints(this->Positions);
-    output->SetVerts(this->Vertices); 
-
-    // allocate velocity first as it uses the most memory and on my win32 machine 
-    // this helps load really big data without alloc failures.
-    if (this->GetPointArrayStatus("Velocity")) 
-      this->Velocity = AllocateGadgetDataArray(output,"velocity",3,numBodies);
-    else 
-      this->Velocity = NULL;
-    if (this->GetPointArrayStatus("Mass"))
-      this->Mass = AllocateGadgetDataArray(output,"mass",1,numBodies);
-    else 
-      this->Mass = NULL;
-    if (this->GetPointArrayStatus("Energy")) 
-      this->Energy = AllocateGadgetDataArray(output,"Energy",1,numBodies);
-    else 
-      this->Energy = NULL;
-    
-    if (this->GetPointArrayStatus("Type"))
-      this->Type = AllocateGadgetDataArray(output,"type",1,numBodies);
-    else 
-      this->Type = NULL;
+  // We are creating arrays for the first time
+  // Allocate objects to hold points and vertex cells. 
+  this->Positions = vtkSmartPointer<vtkPoints>::New();
+  this->Positions->SetDataTypeToFloat();
+  this->Positions->SetNumberOfPoints(numBodies);
+  //
+  this->Vertices  = vtkSmartPointer<vtkCellArray>::New();
+  vtkIdType *cells = this->Vertices->WritePointer(numBodies, numBodies*2);
+  for (vtkIdType i=0; i<numBodies; ++i) {
+    cells[i*2]   = 1;
+    cells[i*2+1] = i;
   }
-  else{
-    // We are extending existing arrays
-    vtkIdType currentSize = this->Positions->GetNumberOfPoints();
-    vtkIdType newSize=currentSize+numBodies;
-    // Arrays relevant for positions:
-    this->Positions->SetNumberOfPoints(newSize);
-    this->Vertices=vtkSmartPointer<vtkCellArray>::New();
-    vtkIdType *cells = this->Vertices->WritePointer(newSize, newSize*2);
-    for (vtkIdType i=0; i<newSize; ++i) {
-      cells[i*2]   = 1;
-      cells[i*2+1] = i;
-    }
-    output->SetVerts(this->Vertices);
-    this->GlobalIds->Resize(newSize);
-    vtkErrorMacro("new global ids array size is" << this->GlobalIds->GetSize() << "\n");
 
-    if(this->Velocity!=NULL) {  
-      this->Velocity->Resize(newSize);  
-      //vtkErrorMacro("new velocity array size is" << this->Velocity->GetSize());
+  //
+  this->GlobalIds = vtkSmartPointer<vtkIdTypeArray>::New();
+  this->GlobalIds->SetName("global_id");
+  this->GlobalIds->SetNumberOfComponents(1);
+  this->GlobalIds->SetNumberOfTuples(numBodies);
+  this->GlobalIds->FillComponent(0, 0.0);
+  
+  output->GetPointData()->AddArray(this->GlobalIds);
 
-    }
-    if(this->Mass!=NULL){
-      this->Mass->Resize(newSize);
-      //vtkErrorMacro("new mass array size is" << this->Mass->GetSize());
+ // Storing the points and cells in the output data object.
+  output->SetPoints(this->Positions);
+  output->SetVerts(this->Vertices); 
 
-    }
-    if(this->Energy!=NULL){
-      this->Energy->Resize(newSize);
-      //vtkErrorMacro("new energy array size is" << this->Energy->GetSize());
-
-    }
-    if(this->Type!=NULL){
-      this->Type->Resize(newSize);
-      //vtkErrorMacro("new type array size is" << this->Type->GetSize());
-
-    }
-
-
-    
-  }
-	
+  // allocate velocity first as it uses the most memory and on my win32 machine 
+  // this helps load really big data without alloc failures.
+  if (this->GetPointArrayStatus("Velocity")) 
+    this->Velocity = AllocateGadgetDataArray(output,"velocity",3,numBodies);
+  else 
+    this->Velocity = NULL;
+  if (this->GetPointArrayStatus("Mass"))
+    this->Mass = AllocateGadgetDataArray(output,"mass",1,numBodies);
+  else 
+    this->Mass = NULL;
+  if (this->GetPointArrayStatus("Energy")) 
+    this->Energy = AllocateGadgetDataArray(output,"Energy",1,numBodies);
+  else 
+    this->Energy = NULL;
+  
+  if (this->GetPointArrayStatus("Type"))
+    this->Type = AllocateGadgetDataArray(output,"type",1,numBodies);
+  else 
+    this->Type = NULL;	
 }
+
 //----------------------------------------------------------------------------
 int vtkGadgetReader::RequestInformation(
 	vtkInformation* vtkNotUsed(request),
@@ -559,23 +513,80 @@ int vtkGadgetReader::RequestData(vtkInformation*,
   
   // Get output information
 	vtkInformation* outInfo = outputVector->GetInformationObject(0);
+  /*
+
   // get this->UpdatePiece information
   this->UpdatePiece = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
 	this->UpdateNumPieces =outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
+	int mympirank=vtkMultiProcessController::GetGlobalController()->GetLocalProcessId();
+   */
+  
+  this->ReadGadgetAllFiles();
+  
 
+  
   // get the output polydata
   vtkPolyData *output = \
     vtkPolyData::SafeDownCast(outInfo->Get(vtkDataObject::DATA_OBJECT()));
   vtkSmartPointer<vtkPolyData> GadgetReadInitialOutput = \
   vtkSmartPointer<vtkPolyData>::New();  
-	int mympirank=vtkMultiProcessController::GetGlobalController()->GetLocalProcessId();
+  // Initialize arrays
+  this->AllocateAllGadgetVariableArrays(gadget.nall, output);
 
-
-	// TODO: Open the Gadget standard file and abort if there is an error.
   
-  if(this->FilePrefix != NULL && *this->FilePrefix != '\0') {
-    vtkErrorMacro("supposedly more than one gadget file" << this->FilePrefix);
-    // Supposedly more than one gadget file
+  // Stuff the output polydata with stuff
+
+  /*=============================================================================
+   *
+   * this simple loop shows you how to use the particles now...
+   *
+   *
+   * Pos[] is in Mpc/h    (comoving coordinate x)
+   * Vel[] is in km/sec   (peculiar velocity \dot{a} x)
+   * Mass  is in Msun/h
+   * ID
+   *
+   *=============================================================================*/
+  double pos[3];
+	double vel[3];
+	double den[3] = {0.0,0.0,0.0};
+
+  for(ipart=0; ipart<gadget.nall; ipart++)
+  {
+    pos[0]=Part[ipart].Pos[X];
+    pos[1]=Part[ipart].Pos[Y];
+    pos[2]=Part[ipart].Pos[Z];
+    this->Positions->SetPoint(ipart, pos);
+
+    fprintf(stderr,"%g %g %g   %g %g %g   %g   %ld\n",
+            Part[ipart].Pos[X],Part[ipart].Pos[Y],Part[ipart].Pos[Z],
+            Part[ipart].Vel[X],Part[ipart].Vel[Y],Part[ipart].Vel[Z],
+            Part[ipart].Mass,
+            Part[ipart].ID);
+  }
+
+  
+	return 1;
+}
+
+
+
+
+int vtkGadgetReader::ReadGadgetAllFiles()
+{
+
+  char    gadget_file[MAXSTRING];
+  int     no_gadget_files, i_gadget_file;
+  FILE   *icfile;
+  int     ipart;
+  
+
+  /*==================================
+   * are there multiple GADGET files?
+   *==================================*/
+  if(this->FilePrefix != NULL && *this->FilePrefix != '\0')
+  {
+    vtkErrorMacro("multiple gadget files, reading!");
     /* maybe there are multiple GADGET files ... count them! */
     no_gadget_files = 0;
     i_gadget_file   = 0;
@@ -586,7 +597,6 @@ int vtkGadgetReader::RequestData(vtkInformation*,
       i_gadget_file++;
       sprintf(gadget_file,"%s.%d",this->FilePrefix,i_gadget_file);
     }
-    vtkErrorMacro("number of gadget files" << no_gadget_files);
     
     if(no_gadget_files > 1)
     {
@@ -604,17 +614,16 @@ int vtkGadgetReader::RequestData(vtkInformation*,
       /* read multi-GADGET files one by one */
       for(i_gadget_file=0; i_gadget_file<no_gadget_files; i_gadget_file++)
       {
-        vtkErrorMacro("reading file" << i_gadget_file);
         sprintf(gadget_file,"%s.%d",this->FilePrefix,i_gadget_file);
         fprintf(stderr,"\n===================================================================\n");
         fprintf(stderr,"=> reading %s\n\n",gadget_file);
         icfile = fopen(gadget_file,"rb");
         
-        /* tell read_gadget() which file we are using at the moment */
+        /* tell this->ReadGadget() which file we are using at the moment */
         gadget.i_gadget_file = i_gadget_file;
         
         /* read files... */
-        this->ReadGadget(icfile,output);
+        this->ReadGadget(icfile);
         fclose(icfile);
       } 
       
@@ -632,44 +641,57 @@ int vtkGadgetReader::RequestData(vtkInformation*,
       fprintf(stderr,"\n\ninput: could not open file with IC's  %s\n",this->FilePrefix);
       exit(0);
     }
+  }
+  /*===============================
+   * there is only one GADGET file
+   *===============================*/
+  else if ( (icfile = fopen(this->FileName,"rb")) != NULL)
+  {
+    vtkErrorMacro("only one gadget file, reading!");
+    gadget.no_gadget_files  = 1;
+    gadget.i_gadget_file    = 0;
+    
+    /* allocate temporary storage for no. of particles arrays */
+    gadget.np[0]     = (long *) calloc(gadget.no_gadget_files, sizeof(long *));
+    gadget.np[1]     = (long *) calloc(gadget.no_gadget_files, sizeof(long *));
+    gadget.np[2]     = (long *) calloc(gadget.no_gadget_files, sizeof(long *));
+    gadget.np[3]     = (long *) calloc(gadget.no_gadget_files, sizeof(long *));
+    gadget.np[4]     = (long *) calloc(gadget.no_gadget_files, sizeof(long *));
+    gadget.np[5]     = (long *) calloc(gadget.no_gadget_files, sizeof(long *));
+    
+    this->ReadGadget(icfile);
+    fclose(icfile);
+    
+    /* remove temporary storage again */
+    /*
+    free(gadget.np[0]);
+    free(gadget.np[1]);
+    free(gadget.np[2]);
+    free(gadget.np[3]);
+    free(gadget.np[4]);
+    free(gadget.np[5]);
+     */
+  }
+  else{
+    vtkErrorMacro("unable to open gadget file reading!");
+  }
+  
+  fprintf(stderr,"finished reading gadget, returning\n");
 
-    
-    
-    
-  }
-  else {
-    ////
-    // Only one gadget file
-    /////
-    if((icfile = fopen(this->FileName,"rb")) != NULL) 
-      {
-        gadget.no_gadget_files  = 1;
-        gadget.i_gadget_file    = 0;
-        
-        /* allocate temporary storage for no. of particles arrays */
-        gadget.np[0]     = (long *) calloc(gadget.no_gadget_files, sizeof(long *));
-        gadget.np[1]     = (long *) calloc(gadget.no_gadget_files, sizeof(long *));
-        gadget.np[2]     = (long *) calloc(gadget.no_gadget_files, sizeof(long *));
-        gadget.np[3]     = (long *) calloc(gadget.no_gadget_files, sizeof(long *));
-        gadget.np[4]     = (long *) calloc(gadget.no_gadget_files, sizeof(long *));
-        gadget.np[5]     = (long *) calloc(gadget.no_gadget_files, sizeof(long *));
-        
-        this->ReadGadget(icfile,output);
-        fclose(icfile);
-      }
-    else 
-      {
-        vtkErrorMacro("problem opening" << this->FileName);
-      }
-  }
- 	return 1;
+  /* check the range of the IDs of "halo" particles */
+  /*
+  fprintf(stderr,"\nquick ID check:\n");
+  fprintf(stderr,"   IDmin = %ld\n",IDmin);
+  fprintf(stderr,"   IDmax = %ld\n",IDmax);
+  fprintf(stderr,"   IDmax-IDmin = %ld  vs.  nall[1] = %d\n\n",IDmax-IDmin,gadget.header.nall[1]);
+   */
+  //exit(0);
+ 
 }
 
+int vtkGadgetReader::ReadGadget(FILE *icfile)
+{
 
-// actually does the heavy lifting in terms of reading in from the file
-int vtkGadgetReader::ReadGadget(FILE *icfile, vtkPolyData *output) {
-  //--------------------------------
-	
   long unsigned  ipart;
   
   double         tot_mass[6];
@@ -692,6 +714,7 @@ int vtkGadgetReader::ReadGadget(FILE *icfile, vtkPolyData *output) {
     fread(DATA,sizeof(char),4,icfile);
     DATA[4] = '\0';
     GADGET_SKIP;
+    
     GADGET_SKIP;
     fprintf(stderr,"reading... %s\n",DATA);
   }
@@ -730,16 +753,8 @@ int vtkGadgetReader::ReadGadget(FILE *icfile, vtkPolyData *output) {
   
   GADGET_SKIP;
   /*================= read in GADGET IO header =================*/
-  vtkErrorMacro("read in gadget io header, omega0 is " << gadget.header.Omega0 << "\n");
+  vtkErrorMacro("read in gadget IO header omega0="<< gadget.header.Omega0 << "\n");
 
-
-  vtkErrorMacro("read in gadget io header NPs are " << gadget.header.np[0] << " " << gadget.header.np[1] <<  " " << gadget.header.np[2] << " " << gadget.header.np[3] << " " <<  gadget.header.np[4] << " " << gadget.header.np[5] << "\n");
-
-  
-  // here's where the ParaView specific code comes in
-	
-		// Allocate the arrays
-  
   /* keep track of no. of particles in each GADGET file */
   gadget.np[0][gadget.i_gadget_file] = gadget.header.np[0];
   gadget.np[1][gadget.i_gadget_file] = gadget.header.np[1];
@@ -752,7 +767,8 @@ int vtkGadgetReader::ReadGadget(FILE *icfile, vtkPolyData *output) {
   x_fac  = this->LUnit;
   v_fac  = sqrt(gadget.header.expansion);
   m_fac  = this->MUnit;
-  
+
+
   /* count total no. of particles in current file (and set massflag) */
   massflag    = 0;
   no_part     = 0;
@@ -764,11 +780,14 @@ int vtkGadgetReader::ReadGadget(FILE *icfile, vtkPolyData *output) {
     if(gadget.header.massarr[i] < MZERO && gadget.header.np[i] > 0)
       massflag=1;  
   }  
-  
+  vtkErrorMacro("read in gadget files, no part="<< no_part << " total=" << gadget.nall << "\n");
+
+  return 1; // TODO: remove
+
   /* be verbose */
   fprintf(stderr,"expansion factor: %lf\n",             gadget.header.expansion);
   fprintf(stderr,"redshift:         %lf\n",             gadget.header.redshift);
-  fprintf(stderr,"boxsize:          %lf (%lf Mpc/h)\n", gadget.header.BoxSize,gadget.header.BoxSize*GADGET_LUNIT);
+  fprintf(stderr,"boxsize:          %lf (%lf Mpc/h)\n", gadget.header.BoxSize,gadget.header.BoxSize*this->LUnit);
   fprintf(stderr,"omega0:           %lf\n",             gadget.header.Omega0);
   fprintf(stderr,"lambda0:          %lf\n",             gadget.header.OmegaLambda);
   fprintf(stderr,"HubbleParam:      %lf\n\n",           gadget.header.HubbleParam);
@@ -781,17 +800,20 @@ int vtkGadgetReader::ReadGadget(FILE *icfile, vtkPolyData *output) {
   fprintf(stderr,"bndry:  np[5]=%9d\t nall[5]=%9d\t massarr[5]=%g\n",gadget.header.np[5],gadget.header.nall[5],gadget.header.massarr[5]); 
   
   fprintf(stderr,"\n-> reading %d particles from  GADGET file #%d/%d...\n\n", no_part, gadget.i_gadget_file+1, gadget.no_gadget_files);
-  
 
-  // TODO Size from the gadget header
-	this->AllocateAllGadgetVariableArrays(no_part, output);
-	// Loop through and add to PV arrays
-	double pos[3];
-	double vel[3];
-	double den[3] = {0.0,0.0,0.0};
-	double pmass;
-	
-  // Now reading in 
+  
+  /* allocate particle array (only once when reading the first file, of course!) */
+  if(gadget.i_gadget_file == 0)
+  {
+    fprintf(stderr,"-> allocating %f GB of RAM for particles\n\n",(float)(gadget.nall*sizeof(struct particle_data))/1024./1024./1024.);
+    if(!(Part=(struct particle_data *) calloc(gadget.nall, sizeof(struct particle_data))))
+    {
+      fprintf(stderr,"\nfailed to allocate memory for GADGET data\n");
+      exit(1);
+    }
+  }
+  
+  /*================= read in GADGET particles =================*/
   if(this->Format == 1)
   {
     GADGET_SKIP;
@@ -806,16 +828,15 @@ int vtkGadgetReader::ReadGadget(FILE *icfile, vtkPolyData *output) {
   else
   {
     fprintf(stderr,"reading ");
-  }  
-  GADGET_SKIP;
-
-	
+  }
   
-  // TODO: ignoring age and metals for now.
-  for(int i=0;i<no_part;i++)
+  GADGET_SKIP;
+  fprintf(stderr,"(%8.2g MB) ... ",blklen/1024./1024.);
+  
+  for(i=0;i<no_part;i++)
   {    
     /* read */
-    if(DGADGET)
+    if(this->DGadget)
     {
       ReadDouble(icfile,&(ddummy[0]),this->Swap);
       ReadDouble(icfile,&(ddummy[1]),this->Swap);
@@ -835,25 +856,17 @@ int vtkGadgetReader::ReadGadget(FILE *icfile, vtkPolyData *output) {
     pid = this->GetPid(i);
     
     /* storage and conversion to comoving physical units */
-    pos[0] = ddummy[0] * x_fac;
-    pos[1] = ddummy[1] * x_fac;
-    pos[2] = ddummy[2] * x_fac;  
-		vel[0]=0;
-		vel[1]=0;
-		vel[2]=0;
-		// all particle types have this
-		this->Positions->SetPoint(pid, pos);
-		if (this->Type)      this->Type->SetTuple1(pid, 0.0);
-    
-    if (this->Energy)      this->Energy->SetTuple1(pid, 0.0);
-    
-	}
+    Part[pid].Pos[0] = ddummy[0] * x_fac;
+    Part[pid].Pos[1] = ddummy[1] * x_fac;
+    Part[pid].Pos[2] = ddummy[2] * x_fac;      
+  }
+  fprintf(stderr,"Pos[X]=%12.6g Pos[Y]=%12.6g Pos[Z]=%12.6g ... ",Part[no_part-1].Pos[X],Part[no_part-1].Pos[Y],Part[no_part-1].Pos[Z]);
+  
   GADGET_SKIP;
+  fprintf(stderr,"(%8.2g MB) done.\n",blklen/1024./1024.);
+  /*================= read in GADGET particles =================*/
   
-  /*================= done read in GADGET particles =================*/
   
-  // TODO: remove, just positions for now
-  return 1;
   
   /*================= read in GADGET velocities =================*/
   if(this->Format == 1)
@@ -878,7 +891,7 @@ int vtkGadgetReader::ReadGadget(FILE *icfile, vtkPolyData *output) {
   for(i=0;i<no_part;i++)
   {
     /* read */
-    if(DGADGET)
+    if(this->DGadget)
     {
       ReadDouble(icfile,&(ddummy[0]),this->Swap);
       ReadDouble(icfile,&(ddummy[1]),this->Swap);
@@ -898,19 +911,19 @@ int vtkGadgetReader::ReadGadget(FILE *icfile, vtkPolyData *output) {
     pid = this->GetPid(i);
     
     /* storage and conversion to comoving physical units */
-    vel[0] = ddummy[0] * v_fac;
-    vel[1] = ddummy[1] * v_fac;
-    vel[2] = ddummy[2] * v_fac; 
-    if (this->Velocity)  this->Velocity->SetTuple(pid, vel);
-
+    Part[pid].Vel[0] = ddummy[0] * v_fac;
+    Part[pid].Vel[1] = ddummy[1] * v_fac;
+    Part[pid].Vel[2] = ddummy[2] * v_fac; 
   }
+  fprintf(stderr,"Vel[X]=%12.6g Vel[Y]=%12.6g Vel[Z]=%12.6g ... ",Part[no_part-1].Vel[X],Part[no_part-1].Vel[Y],Part[no_part-1].Vel[Z]);
   
   GADGET_SKIP;
-  /*================= done read in GADGET velocities =================*/
+  fprintf(stderr,"(%8.2g MB) done.\n",blklen/1024./1024.);
+  /*================= read in GADGET velocities =================*/
   
-
+  
   /*================= read in GADGET id's =================*/
-  if(this->Format == 2)
+  if(this->Format == 1)
   {
     GADGET_SKIP;
     
@@ -927,36 +940,47 @@ int vtkGadgetReader::ReadGadget(FILE *icfile, vtkPolyData *output) {
   }
   
   GADGET_SKIP;
+  fprintf(stderr,"(%8.2g MB) ... ",blklen/1024./1024.);
   
   for(i=0;i<no_part;i++)
   {
     /* get proper position in Part[] array */
     pid = this->GetPid(i);
     
-    if(LGADGET)
+    if(this->LGadget)
     {
       ReadLong(icfile,&ldummy,this->Swap);
-      this->GlobalIds->SetTuple1(pid,(vtkIdType)ldummy); 
+      Part[pid].ID = ldummy;
     }
     else
     {
       ReadInt(icfile,&idummy,this->Swap);
-      this->GlobalIds->SetTuple1(pid, (vtkIdType)ldummy);
+      Part[pid].ID = (long) idummy;
     }
     
-  }  
+    /* check the ID range of the "halo" particles */
+    /*
+    if(gadget.header.np[0] <= i && i < gadget.header.np[0]+gadget.header.np[1])
+    {
+      if(Part[pid].ID > IDmax) IDmax = Part[pid].ID; 
+      if(Part[pid].ID < IDmin) IDmin = Part[pid].ID; 
+    }
+     */
+  }
+  
+  fprintf(stderr,"ID=%12ld ...  ",Part[no_part-1].ID);
   
   GADGET_SKIP;
-  /*================= done read in GADGET id's =================*/
+  fprintf(stderr,"(%8.2g MB) done.\n",blklen/1024./1024.);
+  /*================= read in GADGET id's =================*/
   
-
   
   k = 0;
   /* massflag == 1 indicates that massarr[i] = 0 and hence need to read in particle masses */
   if(massflag==1) 
   {
     /*================= read in GADGET individual particle masses =================*/
-    if(this->Format == 2)
+    if(this->Format == 1)
     {
       GADGET_SKIP; 
       fread(DATA,sizeof(char),4,icfile);
@@ -985,7 +1009,7 @@ int vtkGadgetReader::ReadGadget(FILE *icfile, vtkPolyData *output) {
         for(j=0; j<gadget.header.np[i]; j++)
         {
           /* read */
-          if(DGADGET)
+          if(this->DGadget)
           {
             ReadDouble(icfile,&(ddummy[0]),this->Swap);
           }
@@ -999,8 +1023,7 @@ int vtkGadgetReader::ReadGadget(FILE *icfile, vtkPolyData *output) {
           pid = this->GetPid(k);
           
           /* store */
-          if (this->Mass)      this->Mass->SetTuple1(pid, ddummy[0]);
-
+          Part[pid].Mass  = ddummy[0];
           tot_mass[i]    += ddummy[0];
           k++;
         }
@@ -1014,7 +1037,7 @@ int vtkGadgetReader::ReadGadget(FILE *icfile, vtkPolyData *output) {
           pid = this->GetPid(k);
           
           /* store */
-          if (this->Mass)      this->Mass->SetTuple1(pid, gadget.header.massarr[i]);
+          Part[pid].Mass = gadget.header.massarr[i];
           k++;
         }
         tot_mass[i] = gadget.header.np[i]*gadget.header.massarr[i];
@@ -1038,7 +1061,7 @@ int vtkGadgetReader::ReadGadget(FILE *icfile, vtkPolyData *output) {
         pid = this->GetPid(k);
         
         /* store */
-        if (this->Mass)  this->Mass->SetTuple1(pid, gadget.header.massarr[i]);
+        Part[pid].Mass = gadget.header.massarr[i];
         k++;
       }
       tot_mass[i] = gadget.header.np[i]*gadget.header.massarr[i];
@@ -1053,18 +1076,17 @@ int vtkGadgetReader::ReadGadget(FILE *icfile, vtkPolyData *output) {
     {
       /* get proper position in Part[] array */
       pid = this->GetPid(k);
-      if (this->Mass)      {
-          double dmass = this->Mass->GetTuple1(pid);
-          this->Mass->SetTuple1(pid,dmass*this->MUnit);
-      }   
+      
+      Part[pid].Mass *= this->MUnit;
       k++;
     }
   }
   
+  
   /*================= read in GADGET gas particle energies =================*/
   if(gadget.header.np[0] > 0) 
   {      
-    if(this->Format == 2)
+    if(this->Format == 1)
     {
       GADGET_SKIP;
       
@@ -1086,7 +1108,7 @@ int vtkGadgetReader::ReadGadget(FILE *icfile, vtkPolyData *output) {
     for(i=0; i<gadget.header.np[0]; i++)
     {
       /* store */
-      if(DGADGET)
+      if(this->DGadget)
       {
         ReadDouble(icfile,&(ddummy[0]),this->Swap);
       }
@@ -1098,10 +1120,9 @@ int vtkGadgetReader::ReadGadget(FILE *icfile, vtkPolyData *output) {
       
       /* get proper position in Part[] array */
       pid = this->GetPid(i);
+      
       /* store additional gas particle property */
-      // TODO: add back in correct!
-       //if (this->Energy) this->Energy->SetTuple1(pid,ddummy[0]);         
-      if (this->Energy) this->Energy->SetTuple1(pid,(double)pid);         
+      Part[pid].u = ddummy[0];         
     }
     
     GADGET_SKIP;
@@ -1109,33 +1130,18 @@ int vtkGadgetReader::ReadGadget(FILE *icfile, vtkPolyData *output) {
   } 
   /*================= read in GADGET gas particle energies =================*/
   
-
-
   
+  /* be verbose */
+  fprintf(stderr,"\n");
+  if(gadget.header.np[0] > 0) fprintf(stderr,"    gas:    tot_mass[0]=%16.8g Msun/h (%16.8g Msun/h per particle)\n",tot_mass[0]*this->MUnit,tot_mass[0]/(double)gadget.header.np[0]*this->MUnit);
+  if(gadget.header.np[1] > 0) fprintf(stderr,"    halo:   tot_mass[1]=%16.8g Msun/h (%16.8g Msun/h per particle)\n",tot_mass[1]*this->MUnit,tot_mass[1]/(double)gadget.header.np[1]*this->MUnit);
+  if(gadget.header.np[2] > 0) fprintf(stderr,"    disk:   tot_mass[2]=%16.8g Msun/h (%16.8g Msun/h per particle)\n",tot_mass[2]*this->MUnit,tot_mass[2]/(double)gadget.header.np[2]*this->MUnit);
+  if(gadget.header.np[3] > 0) fprintf(stderr,"    bulge:  tot_mass[3]=%16.8g Msun/h (%16.8g Msun/h per particle)\n",tot_mass[3]*this->MUnit,tot_mass[3]/(double)gadget.header.np[3]*this->MUnit);
+  if(gadget.header.np[4] > 0) fprintf(stderr,"    stars:  tot_mass[4]=%16.8g Msun/h (%16.8g Msun/h per particle)\n",tot_mass[4]*this->MUnit,tot_mass[4]/(double)gadget.header.np[4]*this->MUnit);
+  if(gadget.header.np[5] > 0) fprintf(stderr,"    bndry:  tot_mass[5]=%16.8g Msun/h (%16.8g Msun/h per particle)\n",tot_mass[5]*this->MUnit,tot_mass[5]/(double)gadget.header.np[5]*this->MUnit);
   
-
-	
-	// Done, vis o'clock
-	// can free memory allocated in vectors above
-	
-  vtkDebugMacro("Reading all points from file " << this->FileName);
-  // Read Successfully
-  vtkDebugMacro("Read " << output->GetPoints()->GetNumberOfPoints() \
-                << " points.");
-  // release memory smartpointers - just to play safe.
-  this->Vertices    = NULL;
-  this->GlobalIds   = NULL;
-  this->Positions   = NULL;
-  this->Mass        = NULL;
-  this->Energy         = NULL;
-	this->Type        = NULL;
-  this->Velocity    = NULL;
-  //
-
-  return 0;
+  fprintf(stderr,"===================================================================\n");
 }
-
-
 
 
 /*=============================================================================
