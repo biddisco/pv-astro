@@ -19,9 +19,16 @@
 #include "vtkTableAlgorithm.h" // super class
 #include "vtkStringArray.h" // some class variables are vtkStringArrays
 #include <vtkstd/vector>
+#include "vtkSmartPointer.h"
+#include "vtkFloatArray.h"
+//
+#include <functional>
+
 class vtkPointSet;
 class vtkMultiProcessController;
 class vtkPlane;
+class vtkPoints;
+
 //----------------------------------------------------------------------------
 
 enum ProfileMPIData 
@@ -93,6 +100,30 @@ protected:
 		vtkInformationVector**, vtkInformationVector*);
   vtkMultiProcessController *Controller;
 
+  // These are indices into the array containers and must match
+  // the order which profiles are created in InitializeBins
+  enum ProfileIndex {
+    BinRadius=0,
+    BinRadiusMin,
+    NumberInBinTotal,
+    NumberInBinCumulative,
+    // then there are N=PointData()->GetNumberOfArrays() from here onwards
+    PointDataArrays,
+  };
+
+  // These are indices into the array containers and must match
+  // the order which profiles are created in RequestData
+  enum AdditionalProfileIndex {
+    AngularMomentum=0,
+    RadialVelocity,
+    TangentialVelocity,
+    RadialVelocitySquared,
+    TangentialVelocitySquared,
+    VelocitySquared,
+  };
+
+
+
 	// Description:
 	// the ProfileElement protected nested class holds all the information
 	// necessary to initialize and at runtime compute the value
@@ -107,26 +138,58 @@ protected:
 	// total : if 1 compute the total of this quantity
 	// cumulative: if 1 compute the cumulative value of this quantity
 	// postprocess: if 1 only update during post processing
+  //
+  // This would be better using boost::function and boost:bind
+  //
+  typedef void   (*DoubleFunction0)(double [], double [], double []);
+  typedef double (*DoubleFunction1)(double [], double []);
+  typedef double (*DoubleFunction2)(double []);
+  typedef void   (*PostProcessFunc)(vtkVariant, vtkVariant, double []);
+  enum FuncType 
+  {
+    FUNC0_TYPE=0,
+    FUNC1_TYPE,
+    FUNC2_TYPE,
+    NULL_FUNC,
+    POSTPROCESS_TYPE,
+  };
+  //
   class ProfileElement
   {
   public:
-		vtkstd::string BaseName;
-		int NumberComponents;
-		double* (*Function)(double [], double []);
-		double* (*PostProcessFunction)(vtkVariant, vtkVariant);
-		ColumnType ProfileColumnType;
-		int Postprocess;
-		vtkstd::string ArgOneBaseName;
-		ColumnType ArgOneColumnType;
-		vtkstd::string ArgTwoBaseName;
-		ColumnType ArgTwoColumnType;
+    DoubleFunction0 func0;
+    DoubleFunction1 func1;
+    DoubleFunction2 func2;
+    PostProcessFunc funcP;
+		vtkstd::string  BaseName;
+    vtkstd::string  NameAverage;
+    vtkstd::string  NameTotal;
+    vtkstd::string  NameCumulative;
+		int             NumberComponents;
+		FuncType        FuntionType;
+		ColumnType      ProfileColumnType;
+		vtkstd::string  ArgOneBaseName;
+		ColumnType      ArgOneColumnType;
+		vtkstd::string  ArgTwoBaseName;
+		ColumnType      ArgTwoColumnType;
+    vtkSmartPointer<vtkFloatArray> Data;
+    float          *DataPointer;
 		// Description:
 		// quantities to be processed for each element in each bin with the
 		// function *functPtr which takes in a radius and a velocity given
 		// by double arrays
-		ProfileElement(vtkstd::string baseName, int numberComponents,
-			double* (*funcPtr)(double [], double []),
+		ProfileElement(const char *baseName, int numberComponents,
+			DoubleFunction0, ColumnType columnType);
+
+		ProfileElement(const char *baseName, int numberComponents,
+			DoubleFunction1, ColumnType columnType);
+
+		ProfileElement(const char *baseName, int numberComponents,
+			DoubleFunction2, ColumnType columnType);
+
+		ProfileElement(const char *baseName, int numberComponents,
 			ColumnType columnType);
+
 		// Description:
 		// if post processing is desired, then must specify two arguments, which
 		// are profile elements. Their data (all computed) will be retrieved from
@@ -139,13 +202,22 @@ protected:
 		// thus requires that they are part of the input (for which
 		//  CUMULATIVE,AVERAGE and TOTAL are computed for each array name)
 		// or that they are specified as an additional profile element above
-		ProfileElement(vtkstd::string baseName, int numberComponents,
-			double* (*funcPtr)(vtkVariant, vtkVariant),
-			vtkstd::string argOneBaseName, ColumnType argOneColumnType, 
-			vtkstd::string argTwoBaseName, ColumnType argTwoColumnType);
+		ProfileElement(const char *baseName, int numberComponents,
+			PostProcessFunc,
+			const char *argOneBaseName, ColumnType argOneColumnType, 
+			const char *argTwoBaseName, ColumnType argTwoColumnType);
 		~ProfileElement();
+    
+    // String Bookkeeping
+    void        CreateColumnNames();
+    const char *GetColumnName();
+
+    // Array Bookkeeping
+    vtkFloatArray *AllocateBinArray(vtkIdType numTuples);
  	};
+
 	double Delta;
+  
   // Description:
 	// Center around which to compute radial bins
 	double Center[3];
@@ -156,22 +228,29 @@ protected:
 
   // Description:
   // if specified and non zero, items above this height from center are ignored in profile
-	// user intput, with default
+	// user input, with default
 	double ProfileHeight;
 
   // Description:
 	// Number of bins to use
-	// user intput, with default
+	// user input, with default
 	int BinNumber;
+
   // Description:
 	// Spacing between bins, automatically calculated based upon other
 	// selections
 	double BinSpacing;
+
 	// Description:
 	// Max distance from center point to the data set boundaries, or to
 	// the virial radius if applicable
 	double MaxR;
-	// Description:
+
+  // Description:
+	// Profiles we generate from the input
+	vtkstd::vector<ProfileElement> ProfileQuantities;
+
+  // Description:
 	// Quantities to add to the input
 	vtkstd::vector<ProfileElement> AdditionalProfileQuantities;
   
@@ -217,6 +296,7 @@ protected:
 	// BinAveragesAndPostprocessing must be called to do the proper averaging
 	// and/or postprocessing on  the accumlated columns.
 	void UpdateBinStatistics(vtkPointSet* input, 
+    vtkPoints *points, vtkDataArray *velocity,
 		vtkIdType pointGlobalId,vtkTable* output);
 	
 	// Description:
@@ -229,56 +309,16 @@ protected:
 	// multiplicatively as specified by updatetype by dataToAdd. Calls
 	// either UpdateArrayBin or UpdateDoubleBin depending on the
 	// type of data in the bin.
-	void UpdateBin(int binNum, BinUpdateType updateType,
-	 	vtkstd::string baseName, ColumnType columnType, double* updateData,
-	 	vtkTable* output);
 	
-	// Description:
-	// Overloaded updated bin, taking in a single double. If column to update
-	// contains an array, also makes an array out of update data by replicating
-	// it in each entry, then finally calls UpdateArrayBin
-	void UpdateBin(int binNum, BinUpdateType updateType,
-	 	vtkstd::string baseName, ColumnType columnType, double updateData,
-		vtkTable* output);
-	
-	// Description:
-	// If this bin contains an array, update with this method. size(updateData)
-	// should be equal to size(oldData)
-	void UpdateArrayBin(int binNum, BinUpdateType updateType,
-	 	vtkstd::string baseName, ColumnType columnType, double* updateData,
-		vtkAbstractArray* oldData, vtkTable* output);
+  void UpdateBin(int binNum, BinUpdateType updateType,
+    ProfileElement &profile, double *updateData);
 
-	// Description:
-	// If this bin contains an array, update with this method. size(updateData)
-	// should be equal to size(oldData). Identical to other UpdateArrayBin
-	// method except takes in two vtkAbstractArrays		
-	void UpdateArrayBin(int binNum, BinUpdateType updateType,
-	 	vtkstd::string baseName, ColumnType columnType,
-	 	vtkAbstractArray* updateData, vtkAbstractArray* oldData, 
-		vtkTable* output);
-		
-	// Description:
-	// If this bin contains a double, update with this method. 	
-	void UpdateDoubleBin(int binNum, BinUpdateType updateType,
-		vtkstd::string baseName, ColumnType columnType, double updateData,
-	 	double oldData, vtkTable* output);
-		
-	// Description:
-	// This function is useful for those data items who want to keep track of 
-	// a cumulative number. E.g. N(<=r), calls updateBin on all bins >= binNum
-	// updating the attribute specified
-	void UpdateCumulativeBins(int binNum, BinUpdateType 		
-		updateType, vtkstd::string baseName, ColumnType columnType,
-		double* dataToAdd, vtkTable* output);
+  void UpdateBin(BinUpdateType updateType,
+    ProfileElement &profile, double *updateData, double *oldData);
 
-	// Description:
-	// This function is useful for those data items who want to keep track of 
-	// a cumulative number. E.g. N(<=r), calls updateBin on all bins >= binNum
-	// updating the attribute specified. Identical to the one above, but calls
-	// the double dataToAdd version of UpdatBin instead of the double*
-	void UpdateCumulativeBins(int binNum, BinUpdateType 		
-		updateType, vtkstd::string baseName, ColumnType columnType, 
-		double dataToAdd, vtkTable* output);
+  void UpdateCumulativeBins(int binNum, BinUpdateType updateType, 
+    ProfileElement &profile, 
+    double* dataToAdd);
 
 	// Description:
 	// Based upon the additionalQuantityName, returns a double
@@ -289,8 +329,8 @@ protected:
 	// Currently all of these are calculated
 	// from v and from r, which are 3-vectors taken as inputs. Would have to be 
 	// rediefined to be more general if other quantities were desired.
-	double* CalculateAdditionalProfileQuantity(vtkstd::string
-		additionalQuantityName,double v[], double r[]);
+	double* CalculateAdditionalProfileQuantity(
+    const char *additionalQuantityName,double v[], double r[]);
 	
 	// Description:
    // After all points have updated the bin statistics, UpdateBinAverages
@@ -303,20 +343,23 @@ protected:
 	// tableToMerge to the corresponding row,column in originalTable
 	void MergeTables(vtkPointSet* input, vtkTable* originalTable,
 		vtkTable* tableToMerge);
+
 	// Description:
 	// helper function for MergeTables, to merge two bins by addition, making
 	// the original table contain the updated result
 	void MergeBins(int binNum, BinUpdateType updateType,
-	 	vtkstd::string baseName, ColumnType columnType, vtkTable* originalTable,
+	 	const char *baseName, ColumnType columnType, vtkTable* originalTable,
 		vtkTable* tableToMerge);
+
 	// Description:
 	// given a base name, a variable index and a column type
-	// (TOTAL,AVERAGE,or CUMULATIVE) returns a string representing
+	// (TOTAL, AVERAGE,or CUMULATIVE) returns a string representing
 	// this data column's name
-	vtkstd::string GetColumnName(vtkstd::string baseName,ColumnType columnType);
+  std::string GetColumnNameSlow(const char *baseName, ColumnType columnType);
+
 	// Description:
 	// Gets a column's data
-	vtkVariant GetData(int binNum, vtkstd::string baseName,
+	vtkVariant GetData(int binNum, const char *baseName,
 		ColumnType columnType, vtkTable* output);
 
   virtual int FillInputPortInformation (int port, vtkInformation *info);

@@ -147,11 +147,7 @@ void vtkVirialRadiusFilter::CalculateAndSetBounds(vtkPointSet* input,
 		int numProc=this->GetController()->GetNumberOfProcesses();
 		if(procId==0)
 			{
-			double* sourceCenter=CalculateCenter(source);
-			for(int i = 0; i < 3; ++i)
-				{
-				this->Center[i]=sourceCenter[i];
-				}
+      source->GetCenter(this->Center);
 			// Syncronizing the centers
 			this->GetController()->Broadcast(this->Center,3,0);			
 			}
@@ -167,11 +163,7 @@ void vtkVirialRadiusFilter::CalculateAndSetBounds(vtkPointSet* input,
 	else
 		{
 		// we aren't using MPI or have only one process
-		double* sourceCenter=CalculateCenter(source);
-		for(int i = 0; i < 3; ++i)
-			{
-			this->Center[i]=sourceCenter[i];
-			}
+    source->GetCenter(this->Center);
 		//calculating the the max R
 		this->MaxR=ComputeMaxR(input,this->Center);			
 		}

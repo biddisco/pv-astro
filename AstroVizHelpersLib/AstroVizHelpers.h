@@ -283,11 +283,6 @@ vtkPolyData* CopyPointsAndData(vtkPointSet* dataSet, vtkIdList*
 // This method only works if input was vtkPolyData...
 vtkPolyData* GetDatasetWithinVirialRadius(VirialRadiusInfo virialRadiusInfo);
 
-// Description:
-// helper function to calculate the center based upon the source.
-// either the point, or the midpoint of a line
-double* CalculateCenter(vtkDataSet* source);
-
 // Description
 // Given an input data set, the bin number, a list of points in the relevant
 // bin,  and the output table, computes the average radial velocity in the
@@ -314,18 +309,18 @@ void ComputeStatisticsInBin(vtkPolyData* inputDataSet, double center[],
 // Can be used to calculate e.g.
 // radialVelocity = ComputeProjection(v,r);
 //  or velocitySquared = ComputeProjection(v,v);
-double* ComputeProjection(double  vectorOne[],double vectorTwo[]);
+void ComputeProjection(double  vectorOne[],double vectorTwo[], double result[]);
 
 // Description:
 // Computes the vector difference between two 3-vectors
 // Can be used to calculate e.g. tangential velocity
 // tangentialVelocity = PointVectorDifference(v,radialVelocity);
-double* PointVectorDifference(double vectorOne[], double vectorTwo[]);
+void PointVectorDifference(double vectorOne[], double vectorTwo[], double result[]);
 
 // Description
 // Give a 3 vector v and a three vector r computes the specific angular 
 // momentum = r x v
-double* ComputeAngularMomentum(double v[], double r[]);
+void ComputeAngularMomentum(double v[], double r[], double result[]);
 
 // Description:
 // Multiplies in place a 3-vector by a constant
@@ -334,45 +329,45 @@ void VecMultConstant(double vector[],double constant);
 // Description
 // Given a vSquaredAve and a vAve calculates the velocity dispersion
 // placing it in the output vector velocityDispersion
-double* ComputeVelocityDispersion(vtkVariant vSquaredAve, vtkVariant vAve);
+void ComputeVelocityDispersion(vtkVariant vSquaredAve, vtkVariant vAve, double result[]);
 	
 // Description:
 // helper function to compute radial velocity
-double* ComputeRadialVelocity(double v[],double r[]);
+void ComputeRadialVelocity(double v[],double r[], double result[]);
 
 // Description:
 // helper function to compute tangential velocity
-double* ComputeTangentialVelocity(double v[],double r[]);
+void ComputeTangentialVelocity(double v[],double r[], double result[]);
 
 // Description:
 // helper function to compute angular momentum
-double* ComputeAngularMomentum(double v[], double r[]);
+void ComputeAngularMomentum(double v[], double r[], double result[]);
 
 // Description:
 // helper function to compute velocity squared
-double* ComputeVelocitySquared(double v[],double r[]);
+double ComputeVelocitySquared(double v[]);
 
 // Description:
 // helper function to compute radial velocity squared
-double* ComputeRadialVelocitySquared(double v[],double r[]);
+double ComputeRadialVelocitySquared(double v[],double r[]);
 
 // Description:
 // helper function to compute tangential velocity squared
-double* ComputeTangentialVelocitySquared(double v[],double r[]);
+void ComputeTangentialVelocitySquared(double v[],double r[], double result[]);
 
 // Description:
 // helper function to compute circular velocity
-double* ComputeCircularVelocity(vtkVariant cumulativeMass, 
-	vtkVariant binRadius);
+void ComputeCircularVelocity(vtkVariant cumulativeMass, 
+	vtkVariant binRadius, double result[]);
 
 // Description:
 // helper function to compute density
-double* ComputeDensity(vtkVariant cumulativeMass, 
-	vtkVariant binRadius);
+void ComputeDensity(vtkVariant cumulativeMass, 
+	vtkVariant binRadius, double result[]);
 	
 // Description:
 // Helper function to compute the midpoint between two points
-double* ComputeMidpoint(double pointOne[], double pointTwo[]);
+void ComputeMidpoint(double pointOne[], double pointTwo[], double result[]);
 
 // Description:
 // Given an AdditionalAttributeFile of the format

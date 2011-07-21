@@ -53,7 +53,7 @@ void InitializeDataArray(vtkDataArray* dataArray, const char* arrayName,
 void AllocateDataArray(vtkTable* output, const char* arrayName,
  			int numComponents, unsigned long numTuples)
 {
-	vtkFloatArray* dataArray=vtkFloatArray::New();
+	vtkSmartPointer<vtkFloatArray> dataArray = vtkSmartPointer<vtkFloatArray>::New();
 	InitializeDataArray(dataArray,arrayName,numComponents,numTuples);		
   output->AddColumn(dataArray);
 }
@@ -467,14 +467,6 @@ vtkIdList* FindPointsWithinRadius(double r,
 }
 
 //----------------------------------------------------------------------------
-double* CalculateCenter(vtkDataSet* source)
-{
-	double* center = new double[3];
-	center = source->GetCenter();
-	return center;
-}
-
-//----------------------------------------------------------------------------
 VirialRadiusInfo ComputeVirialRadius(
 	vtkMultiProcessController* controller, vtkPointLocator* locator,
 	vtkstd::string massArrayName, double softening,double overdensity,
@@ -620,124 +612,94 @@ vtkPolyData* GetDatasetWithinVirialRadius(VirialRadiusInfo virialRadiusInfo)
 
 
 //----------------------------------------------------------------------------
-double* ComputeRadialVelocity(double v[],double r[])
+void ComputeRadialVelocity(double v[],double r[], double result[])
 {
-	return ComputeProjection(v,r);
+	ComputeProjection(v, r, result);
 }
 
 //----------------------------------------------------------------------------
-double* ComputeTangentialVelocity(double v[],double r[])
+void ComputeTangentialVelocity(double v[], double r[], double result[])
 {
-	double* vRad=ComputeRadialVelocity(v,r);
-  double* vTan=PointVectorDifference(v,vRad);
-	delete [] vRad;
-	return vTan;	
+	ComputeRadialVelocity(v, r, result);
+  vtkMath::Subtract(v, result, result);
 }
 //----------------------------------------------------------------------------
-double* ComputeAngularMomentum(double v[], double r[])
+void ComputeAngularMomentum(double v[], double r[], double result[])
 {
-	double* angularMomentum = new double[3];
-	vtkMath::Cross(v,r,angularMomentum);
-	return angularMomentum;
+	vtkMath::Cross(v,r,result);
 }
 
 //----------------------------------------------------------------------------
-double* ComputeVelocitySquared(double v[],double r[])
+double ComputeVelocitySquared(double v[])
 {
-	double* velocitySquared = new double[1];
-	velocitySquared[0]=vtkMath::Dot(v,v);
-	return velocitySquared;
+	return vtkMath::Dot(v,v);
 }
 
 //----------------------------------------------------------------------------
-double* ComputeRadialVelocitySquared(double v[],double r[])
+double ComputeRadialVelocitySquared(double v[],double r[])
 {
-	double* vRad=ComputeRadialVelocity(v,r);
-	double* vRadSquared=new double[1];
-	vRadSquared[0]=vtkMath::Dot(vRad,vRad);
-	delete [] vRad;
-	return vRadSquared;
+  double result[3];
+	ComputeRadialVelocity(v,r,result);
+	return vtkMath::Dot(result,result);
 }
 
 //----------------------------------------------------------------------------
-double* ComputeTangentialVelocitySquared(double v[],double r[])
+double ComputeTangentialVelocitySquared(double v[],double r[])
 {
-	double* vRad=ComputeRadialVelocity(v,r);
-	double* vTan=ComputeTangentialVelocity(v,r);
-	double* vTanSquared=new double[1];
-	vTanSquared[0]=vtkMath::Dot(vTan,vTan);
-	delete [] vRad;
-	delete [] vTan;
-	return vTanSquared;	
+  double result[3];
+	ComputeTangentialVelocity(v,r,result);
+	return vtkMath::Dot(result,result);
 }
 
 //----------------------------------------------------------------------------
-double* ComputeVelocityDispersion(vtkVariant vSquaredAve, vtkVariant vAve)
+void ComputeVelocityDispersion(vtkVariant vSquaredAve, vtkVariant vAve, double result[])
 {
 	// vSquared ave required to be a variant which holds a double,
 	// vAve required to be a variant which holds a double array with 3 
 	// components
-	double* velocityDispersion = new double[3];
 	for(int comp = 0; comp < 3; ++comp)
 		{
-		velocityDispersion[comp] = sqrt(fabs(vSquaredAve.ToDouble() -
+		result[comp] = sqrt(fabs(vSquaredAve.ToDouble() -
 			pow(vAve.ToArray()->GetVariantValue(comp).ToDouble(),2)));
 		}
-	return velocityDispersion;
 }
 //----------------------------------------------------------------------------
-double* ComputeCircularVelocity(vtkVariant cumulativeMass, 
-	vtkVariant binRadius)
+void ComputeCircularVelocity(vtkVariant cumulativeMass, 
+	vtkVariant binRadius, double result[])
 {
-	double* circularVelocity = new double[1];
-	circularVelocity[0]=cumulativeMass.ToDouble()/binRadius.ToDouble();
-	return circularVelocity;
+	result[0]=cumulativeMass.ToDouble()/binRadius.ToDouble();
 }
 
 //----------------------------------------------------------------------------
-double* ComputeDensity(vtkVariant cumulativeMass, 
-	vtkVariant binRadius)
+void ComputeDensity(vtkVariant cumulativeMass, 
+	vtkVariant binRadius, double result[])
 {
-	double* density = new double[1];
-	density[0] = cumulativeMass.ToDouble()/(4./3*vtkMath::Pi()*pow(
+	result[0] = cumulativeMass.ToDouble()/(4./3*vtkMath::Pi()*pow(
 		binRadius.ToDouble(),3));
-	return density;
 }
 
 //----------------------------------------------------------------------------
-double* ComputeProjection(double  vectorOne[],double vectorTwo[])
+void ComputeProjection(double  vectorOne[],double vectorTwo[], double result[])
 {
 	double normVectorTwo = vtkMath::Norm(vectorTwo);
 	double projectionMagnitude = \
 		vtkMath::Dot(vectorOne,vectorTwo)/normVectorTwo;
-	double* projectionVector = new double[3];
 	for(int i = 0; i < 3; ++i)
 	{
-		projectionVector[i] = projectionMagnitude * vectorTwo[i] /normVectorTwo;
+		result[i] = projectionMagnitude * vectorTwo[i] /normVectorTwo;
 	}
-	return projectionVector;
+  /* why not
+  vtkMath::ProjectVector(vectorOne, vectorTwo, result);
+  */
 }
 
 //----------------------------------------------------------------------------
-double* PointVectorDifference(double vectorOne[], double vectorTwo[])
+void ComputeMidpoint(double pointOne[], double pointTwo[], double result[])
 {
-	double* pointVectorDifference = new double[3];
 	for(int i = 0; i < 3; ++i)
 	{
-		pointVectorDifference[i] = vectorOne[i] - vectorTwo[i];
+	result[i] = (pointOne[i] + pointTwo[i])/2;
 	}
-	return pointVectorDifference;
-}
-
-//----------------------------------------------------------------------------
-double* ComputeMidpoint(double pointOne[], double pointTwo[])
-{
-	double* midpoint = new double[3];
-	for(int i = 0; i < 3; ++i)
-	{
-	midpoint[i] = (pointOne[i] + pointTwo[i])/2;
-	}
-	return midpoint;
 }
 
 //----------------------------------------------------------------------------
