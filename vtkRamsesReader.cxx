@@ -20,6 +20,7 @@
 #include "vtkSmartPointer.h"
 #include "vtkDataArraySelection.h"
 #include "vtkMultiProcessController.h"
+#include <time.h>
 #include <cmath>
 #include <assert.h>
 #include <string>
