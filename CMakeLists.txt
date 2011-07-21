@@ -51,6 +51,11 @@ ADD_PARAVIEW_OBJECT_PANEL(
 	)
 
 #Defines the AstroViz plugin
+IF (NOT WIN32)
+	SET(GRAPHIC_SRCS
+		vtkGraficReader.cxx		
+	)
+ENDIF (NOT WIN32)
 ADD_PARAVIEW_PLUGIN(AstroVizPlugin "1.1"
 	SERVER_MANAGER_SOURCES 
 		vtkTipsyReader.cxx
@@ -63,13 +68,13 @@ ADD_PARAVIEW_PLUGIN(AstroVizPlugin "1.1"
 		vtkFriendsOfFriendsHaloFinder.cxx 
 		#vtkPointDisplay.cxx
 		vtkRamsesReader.cxx
-		vtkGraficReader.cxx		
 		#vtkSQLiteReader.cxx
 		#vtkSQLiteReader2.cxx
 		#vtkTrackFilter.cxx
 		#vtkTrackFilter2.cxx
 		vtkSimpleBin.cxx
 		vtkRamsesReader.cxx
+        ${GRAPHIC_SRCS}
 
 	SERVER_MANAGER_XML
 		TipsyReaderSM.xml
@@ -120,9 +125,10 @@ ADD_PARAVIEW_PLUGIN(AstroVizPlugin "1.1"
 	
 # For helper functions often used, will later include these in a single
 # VTK class.
-ADD_LIBRARY(AstroVizHelpers AstroVizHelpersLib/AstroVizHelpers.cxx)
+ADD_LIBRARY(AstroVizHelpers STATIC AstroVizHelpersLib/AstroVizHelpers.cxx)
 
 SET_TARGET_PROPERTIES(AstroVizHelpers PROPERTIES COMPILE_FLAGS "-fPIC")
+TARGET_LINK_LIBRARIES(AstroVizHelpers vtkParallel)
 TARGET_LINK_LIBRARIES(AstroVizPlugin AstroVizHelpers ) 
 
 # For the Tipsy reader plugin I use some of Doug Potter's Tipsy lib.
@@ -154,20 +160,27 @@ ADD_LIBRARY(
 #For the Grafic reader plugin (and later) integrated tipsy HDF, tipsy binary, and grafic reader I use some of Doug Potter's/Joachim Stadel's fio
 # For the Tipsy reader plugin I use some of Doug Potter's Tipsy lib.
 # TODO: this is not working, hardcoding library path for now
-ADD_LIBRARY(
-	fio
-	STATIC
-	fio/fio.c
-	fio/romberg.c
-)
-SET_TARGET_PROPERTIES(fio PROPERTIES LINKER_LANGUAGE C)
-SET_TARGET_PROPERTIES(fio PROPERTIES COMPILE_FLAGS "-fPIC")
+IF (NOT WIN32)
+	ADD_LIBRARY(
+		fio
+		STATIC
+		fio/fio.c
+		fio/romberg.c
+	)
+	SET_TARGET_PROPERTIES(fio PROPERTIES LINKER_LANGUAGE C)
+	SET_TARGET_PROPERTIES(fio PROPERTIES COMPILE_FLAGS "-fPIC")
+ENDIF (NOT WIN32)
 
 TARGET_LINK_LIBRARIES(
 	AstroVizPlugin
-	fio
 	TipsyHelpers
 	SQLitelib
 	#gmp
 	)
 #TARGET_LINK_LIBRARIES(AstroVizPlugin #/Users/corbett/Documents/Projects/pvaddons/ParaViz/ParaViz_src/fio/libFio.so)
+
+IF (NOT WIN32)
+	TARGET_LINK_LIBRARIES(AstroVizPlugin
+		fio
+	)
+ENDIF (NOT WIN32)

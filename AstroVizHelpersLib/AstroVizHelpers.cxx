@@ -25,6 +25,7 @@
 #include "vtkMultiProcessController.h"
 #include "vtkMath.h"
 #define _USE_MATH_DEFINES
+#include <math.h>
 #include <cmath>
 /*----------------------------------------------------------------------------
 *

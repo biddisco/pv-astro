@@ -141,7 +141,7 @@ public:
 	level( unsigned ilevel )
 	: m_ilevel( ilevel )
 	{
-		m_dx = pow(0.5,ilevel+1);
+		m_dx = pow(0.5,(double)ilevel+1);
 		m_nx = (unsigned)(1.0/m_dx);
 		
 		for( unsigned k=1; k<=8; k++ )

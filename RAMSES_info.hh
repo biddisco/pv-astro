@@ -270,7 +270,7 @@ inline void hilbert3d(
 	std::vector<bool> z_bit_mask(1*bit_length, false );
 	
 	unsigned npoints = x.size();
-	double lx = pow(2.0,bit_length);
+	double lx = pow((double)2.0,(double)bit_length);
 	
 	for( unsigned ip=0; ip<npoints; ++ip )
 	{
@@ -319,7 +319,7 @@ inline void hilbert3d(
 		for( unsigned i=0; i<3*bit_length; ++i )
 		{
 			b0 = i_bit_mask[i];
-			order[ip] += (double)b0*pow(2.0,i);
+			order[ip] += (double)b0*pow((double)2.0,(double)i);
 		}
 		
 	}	
