@@ -150,19 +150,19 @@ protected:
     //
     typedef std::vector<ProfileElement>::iterator PIterator;
     //
-    DoubleFunction0 func0;
-    DoubleFunction1 func1;
-    DoubleFunction2 func2;
-    DoubleFunction0 funcP; // can be removed now, use func0
-		vtkstd::string  BaseName;
-    vtkstd::string  DerivedName;
-		int             NumberComponents;
-		FuncType        FuntionType;
-		ColumnType      ProfileColumnType;
-	  PIterator       ArgOne; 
-		PIterator       ArgTwo;
+    DoubleFunction0                func0;
+    DoubleFunction1                func1;
+    DoubleFunction2                func2;
+    DoubleFunction0                funcP; // can be removed now, use func0
+		int                            NumberComponents;
+		vtkstd::string                 BaseName;
+    vtkstd::string                 DerivedName;
+		FuncType                       FuntionType;
+		ColumnType                     ProfileColumnType;
+	  PIterator                      ArgOne; 
+		PIterator                      ArgTwo;
     vtkSmartPointer<vtkFloatArray> Data;
-    float          *DataPointer;
+    float                         *DataPointer;
 
     // Description:
 		// quantities to be processed for each element in each bin with the
@@ -196,6 +196,7 @@ protected:
 			DoubleFunction0,
 			PIterator argOne, 
 			PIterator argTwo);
+    //
 		~ProfileElement();
     
     // String Bookkeeping
@@ -317,8 +318,9 @@ protected:
 	// multiplicatively as specified by updatetype by dataToAdd. 
 
   // Update with array
+  template<typename T>
   void UpdateBin(int binNum, BinUpdateType updateType,
-    ProfileElement &profile, double *updateData);
+    ProfileElement &profile, T *updateData);
 
   // Update with value
   void UpdateBin(int binNum, BinUpdateType updateType,

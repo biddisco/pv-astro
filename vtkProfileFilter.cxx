@@ -98,8 +98,12 @@ int vtkProfileFilter::RequestData(vtkInformation *request,
   vtkTable* const output = vtkTable::GetData(outputVector,0);
   output->Initialize();
 
+  this->ProfileQuantities.clear();
+  this->AdditionalProfileQuantities.clear();
+
   //
-  // Initialize all arrays/profiles locally
+  // Initialize all arrays/profiles locally. 
+  // Much faster than broadcasting.
   //
 
   //
@@ -265,52 +269,53 @@ int vtkProfileFilter::RequestData(vtkInformation *request,
     this->UpdateBin(binNum, SET, binradiimin, radiusmin);     
   }  
 
+  //
+  // Compute statistics for all data on this process
+  //
+  this->UpdateStatistics(input,output);
+
   // runs in parallel, syncing class member data, if necessary, if not
   // functions in serial
-  if(RunInParallel(this->Controller))
+  if (RunInParallel(this->Controller))
     {
     int procId=this->Controller->GetLocalProcessId();
     int numProc=this->Controller->GetNumberOfProcesses();
-    vtkSmartPointer<vtkTable> localTable = vtkSmartPointer<vtkTable>::New();
-    localTable->Initialize();
     if (procId==0)
       {
-      // Syncronizing the intialized table with the other processes
-      this->Controller->Broadcast(localTable,0);
-      this->UpdateStatistics(input,localTable);
-      // Receive computations from each process and merge the table into
-      // the localTable of process 0
-      for(int proc = 1; proc < numProc; ++proc)
+      // Receive computations from each process and merge the tables into
+      // the output of process 0
+      for (int proc = 1; proc < numProc; ++proc)
         {
-        vtkSmartPointer<vtkTable> recLocalTable = \
-          vtkSmartPointer<vtkTable>::New();
+        vtkSmartPointer<vtkTable> recLocalTable = vtkSmartPointer<vtkTable>::New();
         recLocalTable->Initialize();
         this->Controller->Receive(recLocalTable,proc,DATA_TABLE);
-        this->MergeTables(input,localTable,recLocalTable);
+        this->MergeTables(input,output,recLocalTable);
         }
       // Perform final computations
       // Updating averages and doing relevant postprocessing
-      this->BinAveragesAndPostprocessing(input,localTable);
-      // Copy process 0's local table to output, which should have collected
-      // answer
-      output->DeepCopy(localTable);
+      this->BinAveragesAndPostprocessing(input,output);
       }
     else
       {
-      // Syncing initialized, empty table
-      this->Controller->Broadcast(localTable,0);
-      // Updating table with the data on this processor
-      this->UpdateStatistics(input,localTable);
-      // sending result to root
-      this->Controller->Send(localTable,0,DATA_TABLE);
+      // send result to root
+      this->Controller->Send(output,0,DATA_TABLE);
+      // final merged result is on process 0
+      // so all other processes should output empty vtkTable data 
+      output->Initialize();
       }
     }  
   else
     {
-    this->UpdateStatistics(input,output);
     // Updating averages and doing relevant postprocessing
     this->BinAveragesAndPostprocessing(input,output);
     }
+
+  //
+  // we don't need to hold onto all this data, so release it.
+  //
+  this->ProfileQuantities.clear();
+  this->AdditionalProfileQuantities.clear();
+
   timer->StopTimer();
   if (this->Controller->GetLocalProcessId()==0) { 
     std::cout << "ProfileFilter : " << timer->GetElapsedTime() << " seconds" << std::endl;
@@ -323,36 +328,59 @@ void vtkProfileFilter::MergeTables(vtkPointSet* input,
   vtkTable* originalTable, vtkTable* tableToMerge)
 {
   assert(originalTable->GetNumberOfRows()==tableToMerge->GetNumberOfRows());
-  for(int binNum = 0; binNum < originalTable->GetNumberOfRows(); ++binNum)
-    {
-    this->MergeBins(binNum,ADD,"number in bin",TOTAL,
-      originalTable,tableToMerge);  
-    this->MergeBins(binNum,ADD,"number in bin",CUMULATIVE,
-      originalTable,tableToMerge);
-    // Updating quanties for the input data arrays
-    vtkPointData *pd = input->GetPointData();
-    for(int i = 0; i < pd->GetNumberOfArrays(); ++i)
-      {
-      vtkSmartPointer<vtkDataArray> nextArray = \
-         pd->GetArray(i);
-      // Merging the bins
-      const char *baseName = nextArray->GetName();
-      this->MergeBins(binNum,ADD,baseName,TOTAL,originalTable,tableToMerge);
-      this->MergeBins(binNum,ADD,baseName,AVERAGE,originalTable,tableToMerge);  
-      this->MergeBins(binNum,ADD,baseName,CUMULATIVE,
-        originalTable,tableToMerge);
-      }
-    for(int i = 0; i < this->AdditionalProfileQuantities.size(); ++i)
-      {
-      ProfileElement &nextElement=this->AdditionalProfileQuantities[i];
-      if(nextElement.FuntionType!=POSTPROCESS_TYPE)
-        {
-        this->MergeBins(binNum,ADD,nextElement.BaseName.c_str(),
-          nextElement.ProfileColumnType, 
-          originalTable,tableToMerge);
-        }
-      }
+  //
+  // The table we has received should have identical columns to our local table
+  // so we can loop over all our (local) profiles and simply sum data from
+  // the remote table using a simple lookup
+
+  // We skip Bin Radius and Bin Radius min because they do not need to be merged.
+
+  // Loop over arrays first, then elements so that we can cache the data pointers
+  // and do a whole array at once.
+  for (int i=NumberInBinTotal; i<this->ProfileQuantities.size(); i++) {
+    ProfileElement &profile = this->ProfileQuantities[i];
+    //
+    // Get the data pointers for local and (remote) data to be merged
+    //
+    vtkFloatArray *fromArray = vtkFloatArray::SafeDownCast(
+      tableToMerge->GetColumnByName(profile.GetColumnName()));
+
+    if (!fromArray || fromArray->GetNumberOfTuples()!=this->BinNumber) {
+      vtkErrorMacro(<<"Fatal : The columns being merged are not correct");
+      return;
     }
+    //
+    // We've not got the two array pointers. Loop aver bins doing the merge
+    //
+    for (int binNum = 0; binNum<this->BinNumber; ++binNum) {
+      float *fromData = fromArray->GetPointer(binNum);
+      this->UpdateBin<float>(binNum, ADD, profile, fromData);
+    }
+  }
+
+  //
+  // Cut and paste from above using the additional profiles array
+  //
+  for (int i=0; i<this->AdditionalProfileQuantities.size(); ++i) {
+    ProfileElement &profile = this->AdditionalProfileQuantities[i];
+    //
+    // Get the data pointers for local and (remote) data to be merged
+    //
+    vtkFloatArray *fromArray = vtkFloatArray::SafeDownCast(
+      tableToMerge->GetColumnByName(profile.GetColumnName())
+    );
+    if (!fromArray || fromArray->GetNumberOfTuples()!=this->BinNumber) {
+      vtkErrorMacro(<<"Fatal : The columns being merged are not correct");
+      return;
+    }
+    //
+    // We've not got the two array pointers. Loop aver bins doing the merge
+    //
+    for (int binNum = 0; binNum<this->BinNumber; ++binNum) {
+      float *fromData = fromArray->GetPointer(binNum);
+      this->UpdateBin<float>(binNum, ADD, profile, fromData);
+    }
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -510,7 +538,7 @@ void vtkProfileFilter::UpdateBinStatistics(vtkPointSet* input,
 }
 
 //----------------------------------------------------------------------------
-void   vtkProfileFilter::BinAveragesAndPostprocessing(
+void vtkProfileFilter::BinAveragesAndPostprocessing(
   vtkPointSet* input,vtkTable* output)
 {
   vtkPointData *pd = input->GetPointData();
@@ -613,11 +641,12 @@ void vtkProfileFilter::MergeBins(int binNum, BinUpdateType updateType,
 }
 
 //----------------------------------------------------------------------------
+template<typename T>
 void vtkProfileFilter::UpdateBin(int binNum, BinUpdateType updateType,
-   ProfileElement &profile, double *updateData)
+   ProfileElement &profile, T *updateData)
 {
   float *tableData = &profile.DataPointer[binNum*profile.NumberComponents];
-  UpdateBinN<double>(updateType, profile, tableData, updateData);
+  UpdateBinN<T>(updateType, profile, tableData, updateData);
 }
 //----------------------------------------------------------------------------
 void vtkProfileFilter::UpdateBin(int binNum, BinUpdateType updateType,
