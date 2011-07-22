@@ -58,10 +58,12 @@ public:
   static vtkProfileFilter* New();
   vtkTypeRevisionMacro(vtkProfileFilter, vtkTableAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
+
   // Description:
   // Get/Set the center
   vtkSetVector3Macro(Center,double);
   vtkGetVectorMacro(Center,double,3);
+
   // Description:
   // Get/Set the number of bins
   vtkSetMacro(BinNumber,int);
@@ -81,6 +83,7 @@ public:
   // Specify the point locations used to probe input. Any geometry
   // can be used. New style. Equivalent to SetInputConnection(1, algOutput).
   void SetSourceConnection(vtkAlgorithmOutput* algOutput);
+
   // Description:
   // By defualt this filter uses the global controller,
   // but this method can be used to set another instead.
@@ -183,11 +186,11 @@ protected:
 		// the output in postprocessing and a final computation will be performed
 		// with functionPtr.
 		//
-		// The last four arguments specify which two columns
+		// The last arguments specify which two columns
 		// data should be handed to the postprocessing function, which
-		// takes two vtkVariants as arguments and returns a double*,
+		// takes two doubles as arguments and returns a double,
 		// thus requires that they are part of the input (for which
-		//  CUMULATIVE,AVERAGE and TOTAL are computed for each array name)
+		//  CUMULATIVE, AVERAGE and TOTAL are computed for each array name)
 		// or that they are specified as an additional profile element above
 		ProfileElement(const char *baseName, int numberComponents,
 			DoubleFunction0,
@@ -280,7 +283,7 @@ protected:
 	//
 	// For each cumulative array as specified by the CumulativeQuantitiesArray
 	//
-	void InitializeBins(vtkPointSet* input, vtkTable* output);
+//	void InitializeBins(vtkPointSet* input, vtkTable* output);
 
 	// Description:
 	// Calculates the bin spacing 
@@ -311,20 +314,35 @@ protected:
 	// Description:
 	// Updates the data values of attribute specified in attributeName
 	// in the bin specified by binNum, either additively or 	
-	// multiplicatively as specified by updatetype by dataToAdd. Calls
-	// either UpdateArrayBin or UpdateDoubleBin depending on the
-	// type of data in the bin.
-	
+	// multiplicatively as specified by updatetype by dataToAdd. 
+
+  // Update with array
   void UpdateBin(int binNum, BinUpdateType updateType,
     ProfileElement &profile, double *updateData);
 
+  // Update with value
+  void UpdateBin(int binNum, BinUpdateType updateType,
+    ProfileElement &profile, double updateData);
+
+  // Update with array
   template<typename T>
-  void UpdateBin(BinUpdateType updateType,
+  void UpdateBinN(BinUpdateType updateType,
     ProfileElement &profile, float *tableData, T *newData);
 
+  // Update with value
+  template<typename T>
+  void UpdateBin1(BinUpdateType updateType,
+    ProfileElement &profile, float *tableData, T newData);
+
+  // Update with array
   void UpdateCumulativeBins(int binNum, BinUpdateType updateType, 
     ProfileElement &profile, 
     double* dataToAdd);
+
+  // Update with value
+  void UpdateCumulativeBins(int binNum, BinUpdateType updateType, 
+    ProfileElement &profile, 
+    double dataToAdd);
 
 	// Description:
 	// Based upon the additionalQuantityName, returns a double

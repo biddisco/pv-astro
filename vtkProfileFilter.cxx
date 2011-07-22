@@ -99,6 +99,10 @@ int vtkProfileFilter::RequestData(vtkInformation *request,
   output->Initialize();
 
   //
+  // Initialize all arrays/profiles locally
+  //
+
+  //
   // create default profile arrays
   //
   this->ProfileQuantities.push_back(
@@ -158,6 +162,12 @@ int vtkProfileFilter::RequestData(vtkInformation *request,
     &ComputeTangentialVelocity, 
     AVERAGE));
 
+  // DoubleFunction2
+  this->AdditionalProfileQuantities.push_back(
+    ProfileElement("velocity squared",1,
+    &ComputeVelocitySquared,
+    AVERAGE));
+
   // DoubleFunction1
   this->AdditionalProfileQuantities.push_back(
     ProfileElement("radial velocity squared",1,
@@ -166,12 +176,6 @@ int vtkProfileFilter::RequestData(vtkInformation *request,
   this->AdditionalProfileQuantities.push_back(
     ProfileElement("tangential velocity squared",1,
     &ComputeTangentialVelocitySquared,
-    AVERAGE));
-
-  // DoubleFunction2
-  this->AdditionalProfileQuantities.push_back(
-    ProfileElement("velocity squared",1,
-    &ComputeVelocitySquared,
     AVERAGE));
 
   //
@@ -257,8 +261,8 @@ int vtkProfileFilter::RequestData(vtkInformation *request,
   {
     double radiusmax = (binNum+1)*this->BinSpacing;
     double radiusmin =  binNum*this->BinSpacing;
-    this->UpdateBin(binNum, SET, binradii,    &radiusmax);
-    this->UpdateBin(binNum, SET, binradiimin, &radiusmin);     
+    this->UpdateBin(binNum, SET, binradii,    radiusmax);
+    this->UpdateBin(binNum, SET, binradiimin, radiusmin);     
   }  
 
   // runs in parallel, syncing class member data, if necessary, if not
@@ -269,10 +273,8 @@ int vtkProfileFilter::RequestData(vtkInformation *request,
     int numProc=this->Controller->GetNumberOfProcesses();
     vtkSmartPointer<vtkTable> localTable = vtkSmartPointer<vtkTable>::New();
     localTable->Initialize();
-    if(procId==0)
+    if (procId==0)
       {
-      // only take the time to initialize on process 0
-      this->InitializeBins(input,localTable);
       // Syncronizing the intialized table with the other processes
       this->Controller->Broadcast(localTable,0);
       this->UpdateStatistics(input,localTable);
@@ -305,7 +307,6 @@ int vtkProfileFilter::RequestData(vtkInformation *request,
     }  
   else
     {
-    this->InitializeBins(input,output);
     this->UpdateStatistics(input,output);
     // Updating averages and doing relevant postprocessing
     this->BinAveragesAndPostprocessing(input,output);
@@ -420,12 +421,6 @@ int vtkProfileFilter::GetBinNumber(double x[])
   return floor(distanceToCenter/this->BinSpacing);
 }
 
-
-//----------------------------------------------------------------------------
-void vtkProfileFilter::InitializeBins(vtkPointSet* input, vtkTable* output)
-{
-}
-
 //----------------------------------------------------------------------------
 double vtkProfileFilter::CalculateBinSpacing(double maxR,int binNumber)
 {
@@ -468,8 +463,8 @@ void vtkProfileFilter::UpdateBinStatistics(vtkPointSet* input,
   double value = 1.0;
   ProfileElement &numBinTotal = this->ProfileQuantities[NumberInBinTotal];
   ProfileElement &numBinCumul = this->ProfileQuantities[NumberInBinCumulative];
-  this->UpdateBin(binNum, ADD, numBinTotal, &value);  
-  this->UpdateCumulativeBins(binNum,ADD, numBinCumul, &value);  
+  this->UpdateBin(binNum, ADD, numBinTotal, value);  
+  this->UpdateCumulativeBins(binNum,ADD, numBinCumul, value);  
 
   //
   // Updating quanties for the input data arrays
@@ -539,7 +534,7 @@ void   vtkProfileFilter::BinAveragesAndPostprocessing(
         ProfileElement &profileA = this->ProfileQuantities[PointDataArrays+i*3+1];
         // ProfileElement &profileC = this->ProfileQuantities[PointDataArrays+i*3+2];
         //
-        this->UpdateBin(binNum,MULTIPLY,profileA,&factor);
+        this->UpdateBin(binNum, MULTIPLY, profileA, factor);
       }
 
       // For each additional quantity we also divide by N in the average
@@ -549,7 +544,7 @@ void   vtkProfileFilter::BinAveragesAndPostprocessing(
         ProfileElement &profile = this->AdditionalProfileQuantities[i];
         if (profile.ProfileColumnType==AVERAGE)
         {
-          this->UpdateBin(binNum,MULTIPLY,profile,&factor);
+          this->UpdateBin(binNum, MULTIPLY, profile, factor);
         }
       }
     }
@@ -622,11 +617,18 @@ void vtkProfileFilter::UpdateBin(int binNum, BinUpdateType updateType,
    ProfileElement &profile, double *updateData)
 {
   float *tableData = &profile.DataPointer[binNum*profile.NumberComponents];
-  UpdateBin<double>(updateType, profile, tableData, updateData);
+  UpdateBinN<double>(updateType, profile, tableData, updateData);
+}
+//----------------------------------------------------------------------------
+void vtkProfileFilter::UpdateBin(int binNum, BinUpdateType updateType,
+   ProfileElement &profile, double updateData)
+{
+  float *tableData = &profile.DataPointer[binNum*profile.NumberComponents];
+  UpdateBin1<double>(updateType, profile, tableData, updateData);
 }
 //----------------------------------------------------------------------------
 template<typename T>
-void vtkProfileFilter::UpdateBin(BinUpdateType updateType,
+void vtkProfileFilter::UpdateBinN(BinUpdateType updateType,
    ProfileElement &profile, float *tableData, T *newData)
 {
   for (int i=0; i<profile.NumberComponents; i++) {
@@ -645,8 +647,38 @@ void vtkProfileFilter::UpdateBin(BinUpdateType updateType,
 }
 
 //----------------------------------------------------------------------------
+template<typename T>
+void vtkProfileFilter::UpdateBin1(BinUpdateType updateType,
+   ProfileElement &profile, float *tableData, T newData)
+{
+  for (int i=0; i<profile.NumberComponents; i++) {
+    switch (updateType) {
+      case ADD:
+        tableData[i] += newData;
+        break;
+      case MULTIPLY:
+        tableData[i] *= newData;
+        break;
+      case SET:
+        tableData[i] = newData;
+        break;
+    }
+  }
+}
+
+//----------------------------------------------------------------------------
 void vtkProfileFilter::UpdateCumulativeBins(int binNum, BinUpdateType     
   updateType, ProfileElement &profile, double* dataToAdd)
+{
+  for(int bin = binNum; bin < this->BinNumber; ++bin)
+    {
+    this->UpdateBin(bin,updateType,profile,dataToAdd);
+    }
+}
+
+//----------------------------------------------------------------------------
+void vtkProfileFilter::UpdateCumulativeBins(int binNum, BinUpdateType     
+  updateType, ProfileElement &profile, double dataToAdd)
 {
   for(int bin = binNum; bin < this->BinNumber; ++bin)
     {
