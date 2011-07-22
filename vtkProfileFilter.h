@@ -66,8 +66,7 @@ public:
   // Get/Set the number of bins
   vtkSetMacro(BinNumber,int);
   vtkGetMacro(BinNumber,int);
-  
-  
+    
   // Description:
   // Get/Set the Profile Axis
   vtkSetVector3Macro(ProfileAxis,double);
@@ -91,6 +90,7 @@ public:
 protected:
   vtkProfileFilter();
   ~vtkProfileFilter();
+
   // Description:
   // This is called within ProcessRequest when a request asks the algorithm
   // to do its work. This is the method you should override to do whatever the
@@ -110,20 +110,7 @@ protected:
     // then there are N=PointData()->GetNumberOfArrays() from here onwards
     PointDataArrays,
   };
-
-  // These are indices into the array containers and must match
-  // the order which profiles are created in RequestData
-  enum AdditionalProfileIndex {
-    AngularMomentum=0,
-    RadialVelocity,
-    TangentialVelocity,
-    RadialVelocitySquared,
-    TangentialVelocitySquared,
-    VelocitySquared,
-  };
-
-
-
+ 
 	// Description:
 	// the ProfileElement protected nested class holds all the information
 	// necessary to initialize and at runtime compute the value
@@ -144,7 +131,7 @@ protected:
   typedef void   (*DoubleFunction0)(double [], double [], double []);
   typedef double (*DoubleFunction1)(double [], double []);
   typedef double (*DoubleFunction2)(double []);
-  typedef void   (*PostProcessFunc)(vtkVariant, vtkVariant, double []);
+//  typedef void   (*PostProcessFunc)(vtkVariant, vtkVariant, double []);
   enum FuncType 
   {
     FUNC0_TYPE=0,
@@ -157,24 +144,24 @@ protected:
   class ProfileElement
   {
   public:
+    //
+    typedef std::vector<ProfileElement>::iterator PIterator;
+    //
     DoubleFunction0 func0;
     DoubleFunction1 func1;
     DoubleFunction2 func2;
-    PostProcessFunc funcP;
+    DoubleFunction0 funcP; // can be removed now, use func0
 		vtkstd::string  BaseName;
-    vtkstd::string  NameAverage;
-    vtkstd::string  NameTotal;
-    vtkstd::string  NameCumulative;
+    vtkstd::string  DerivedName;
 		int             NumberComponents;
 		FuncType        FuntionType;
 		ColumnType      ProfileColumnType;
-		vtkstd::string  ArgOneBaseName;
-		ColumnType      ArgOneColumnType;
-		vtkstd::string  ArgTwoBaseName;
-		ColumnType      ArgTwoColumnType;
+	  PIterator       ArgOne; 
+		PIterator       ArgTwo;
     vtkSmartPointer<vtkFloatArray> Data;
     float          *DataPointer;
-		// Description:
+
+    // Description:
 		// quantities to be processed for each element in each bin with the
 		// function *functPtr which takes in a radius and a velocity given
 		// by double arrays
@@ -203,17 +190,35 @@ protected:
 		//  CUMULATIVE,AVERAGE and TOTAL are computed for each array name)
 		// or that they are specified as an additional profile element above
 		ProfileElement(const char *baseName, int numberComponents,
-			PostProcessFunc,
-			const char *argOneBaseName, ColumnType argOneColumnType, 
-			const char *argTwoBaseName, ColumnType argTwoColumnType);
+			DoubleFunction0,
+			PIterator argOne, 
+			PIterator argTwo);
 		~ProfileElement();
     
     // String Bookkeeping
     void        CreateColumnNames();
-    const char *GetColumnName();
+    const char *GetColumnName() const;
 
     // Array Bookkeeping
     vtkFloatArray *AllocateBinArray(vtkIdType numTuples);
+
+    //----------------------------------------------------------------------------
+    // A functor we use to locate a given profile object in a list
+    //----------------------------------------------------------------------------
+    struct FindProfile : std::unary_function<vtkProfileFilter::ProfileElement,bool> {
+      FindProfile(std::string name, ColumnType columntype) {
+        Name = name;
+        Columntype  = columntype;
+      }
+      bool operator()(const vtkProfileFilter::ProfileElement &lhs) {
+        if (std::string(lhs.BaseName)==Name && lhs.ProfileColumnType==Columntype) {
+          return true;
+        }
+        return false;
+      }
+      std::string Name;
+      ColumnType  Columntype;
+    };
  	};
 
 	double Delta;
@@ -313,8 +318,9 @@ protected:
   void UpdateBin(int binNum, BinUpdateType updateType,
     ProfileElement &profile, double *updateData);
 
+  template<typename T>
   void UpdateBin(BinUpdateType updateType,
-    ProfileElement &profile, double *updateData, double *oldData);
+    ProfileElement &profile, float *tableData, T *newData);
 
   void UpdateCumulativeBins(int binNum, BinUpdateType updateType, 
     ProfileElement &profile, 

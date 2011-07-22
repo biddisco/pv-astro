@@ -500,7 +500,7 @@ VirialRadiusInfo ComputeVirialRadius(
 			{
 			// if our last three guesses have been monotonically decreasing
 			// in density, then try to calculate the root
-			if(denGuessR[0]>denGuessR[1]>denGuessR[2])
+			if(denGuessR[0]>denGuessR[1] && denGuessR[1]>denGuessR[2])
 				{
 				virialRadiusInfo.criticalValue=overdensity;
 				virialRadiusInfo.virialRadius = \
@@ -652,34 +652,30 @@ double ComputeTangentialVelocitySquared(double v[],double r[])
 }
 
 //----------------------------------------------------------------------------
-void ComputeVelocityDispersion(vtkVariant vSquaredAve, vtkVariant vAve, double result[])
+void ComputeVelocityDispersion(double *vSquaredAve, double *vAve, double result[])
 {
 	// vSquared ave required to be a variant which holds a double,
 	// vAve required to be a variant which holds a double array with 3 
 	// components
-	for(int comp = 0; comp < 3; ++comp)
+	for (int comp = 0; comp < 3; ++comp)
 		{
-		result[comp] = sqrt(fabs(vSquaredAve.ToDouble() -
-			pow(vAve.ToArray()->GetVariantValue(comp).ToDouble(),2)));
+		result[comp] = sqrt(fabs(vSquaredAve[0] - pow(vAve[comp],2)));
 		}
 }
 //----------------------------------------------------------------------------
-void ComputeCircularVelocity(vtkVariant cumulativeMass, 
-	vtkVariant binRadius, double result[])
+void ComputeCircularVelocity(double *cumulativeMass, double *binRadius, double result[])
 {
-	result[0]=cumulativeMass.ToDouble()/binRadius.ToDouble();
+	result[0]=cumulativeMass[0]/binRadius[0];
 }
 
 //----------------------------------------------------------------------------
-void ComputeDensity(vtkVariant cumulativeMass, 
-	vtkVariant binRadius, double result[])
+void ComputeDensity(double *cumulativeMass, double *binRadius, double result[])
 {
-	result[0] = cumulativeMass.ToDouble()/(4./3*vtkMath::Pi()*pow(
-		binRadius.ToDouble(),3));
+	result[0] = cumulativeMass[0]/(4.0/3.0*vtkMath::Pi()*pow(binRadius[0],3));
 }
 
 //----------------------------------------------------------------------------
-void ComputeProjection(double  vectorOne[],double vectorTwo[], double result[])
+void ComputeProjection(double vectorOne[], double vectorTwo[], double result[])
 {
 	double normVectorTwo = vtkMath::Norm(vectorTwo);
 	double projectionMagnitude = \

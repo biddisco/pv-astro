@@ -24,6 +24,7 @@
 #include "vtkPlane.h"
 #include "vtkTimerLog.h"
 #include <cmath>
+#include <algorithm>
 using vtkstd::string;
 
 vtkCxxRevisionMacro(vtkProfileFilter, "$Revision: 1.72 $");
@@ -66,6 +67,7 @@ void vtkProfileFilter::SetSourceConnection(vtkAlgorithmOutput* algOutput)
   this->SetInputConnection(1, algOutput);
 }
 
+//----------------------------------------------------------------------------
 int vtkProfileFilter::FillInputPortInformation (int port, 
   vtkInformation *info)
 {
@@ -82,8 +84,8 @@ int vtkProfileFilter::RequestData(vtkInformation *request,
   vtkSmartPointer<vtkTimerLog> timer = vtkSmartPointer<vtkTimerLog>::New();
   timer->StartTimer();
 
-  // Now we can get the input with which we want to work
-   vtkPointSet* input = vtkPointSet::GetData(inputVector[0]);
+  // Get the input with which we want to work
+  vtkPointSet* input = vtkPointSet::GetData(inputVector[0]);
   // Will set the center based upon the selection in the GUI
   vtkDataSet* centerInfo = vtkDataSet::GetData(inputVector[1]);
   // Get name of data array containing mass
@@ -96,8 +98,51 @@ int vtkProfileFilter::RequestData(vtkInformation *request,
   vtkTable* const output = vtkTable::GetData(outputVector,0);
   output->Initialize();
 
-  // Choosing which quantities to profile. Right now choosing all,
-  // could later by modified to use user's input to select
+  //
+  // create default profile arrays
+  //
+  this->ProfileQuantities.push_back(
+    ProfileElement("bin radius", 1,   
+    TOTAL));
+
+  this->ProfileQuantities.push_back(
+    ProfileElement("bin radius min", 1,   
+    TOTAL));
+
+  this->ProfileQuantities.push_back(
+    ProfileElement("number in bin", 1,   
+    TOTAL));
+
+  this->ProfileQuantities.push_back(
+    ProfileElement("number in bin", 1,   
+    CUMULATIVE));
+
+  //
+  // Create 3 profile objects for each point array
+  //
+  vtkPointData *pd = input->GetPointData();
+  for (int i=0; i<pd->GetNumberOfArrays(); ++i)
+  {
+    vtkSmartPointer<vtkDataArray> nextArray = pd->GetArray(i);
+    int numComponents = nextArray->GetNumberOfComponents();
+    const char *baseName = nextArray->GetName();
+    // TOTAL, AVERAGE, CUMULATIVE
+    this->ProfileQuantities.push_back(
+      ProfileElement(baseName, numComponents,   
+      TOTAL));
+    this->ProfileQuantities.push_back(
+      ProfileElement(baseName, numComponents,   
+      AVERAGE));
+    this->ProfileQuantities.push_back(
+      ProfileElement(baseName, numComponents,   
+      CUMULATIVE));
+  }
+
+  // Create Additional profiles
+  // Note : make sure we reserve space before getting profile refs
+  // because vector::push_back() can reallocate space and 
+  // invalidate earlier ones when size changes
+  this->AdditionalProfileQuantities.reserve(15);
 
   // DoubleFunction0
   this->AdditionalProfileQuantities.push_back(
@@ -129,43 +174,95 @@ int vtkProfileFilter::RequestData(vtkInformation *request,
     &ComputeVelocitySquared,
     AVERAGE));
 
-    AngularMomentum=0,
-    RadialVelocity,
-    TangentialVelocity,
-    RadialVelocitySquared,
-    TangentialVelocitySquared,
-    VelocitySquared,
+  //
+  // These profiles refer to other profiles, so we use 
+  // references to the ones we've already created for fast access.
+  // We need to search the profile arrays because
+  // the order is not defined. Fetch the profile now
+  // and we can directly use the arrays it holds later.
+  //
+  ProfileElement::PIterator mass = std::find_if(
+    this->ProfileQuantities.begin(), this->ProfileQuantities.end(),
+    ProfileElement::FindProfile(massArray->GetName(),CUMULATIVE)
+  );
+  ProfileElement::PIterator binradius = std::find_if(
+    this->ProfileQuantities.begin(), this->ProfileQuantities.end(),
+    ProfileElement::FindProfile("bin radius",TOTAL)
+  );
+  ProfileElement::PIterator velocity = std::find_if(
+    this->ProfileQuantities.begin(), this->ProfileQuantities.end(),
+    ProfileElement::FindProfile("velocity",AVERAGE)
+  );
+  ProfileElement::PIterator velocity2 = std::find_if(
+    this->AdditionalProfileQuantities.begin(), this->AdditionalProfileQuantities.end(),
+    ProfileElement::FindProfile("velocity squared",AVERAGE)
+  );
+  ProfileElement::PIterator tangential = std::find_if(
+    this->AdditionalProfileQuantities.begin(), this->AdditionalProfileQuantities.end(),
+    ProfileElement::FindProfile("tangential velocity",AVERAGE)
+  );
+  ProfileElement::PIterator tangential2 = std::find_if(
+    this->AdditionalProfileQuantities.begin(), this->AdditionalProfileQuantities.end(),
+    ProfileElement::FindProfile("tangential velocity squared",AVERAGE)
+  );
+  ProfileElement::PIterator radial = std::find_if(
+    this->AdditionalProfileQuantities.begin(), this->AdditionalProfileQuantities.end(),
+    ProfileElement::FindProfile("radial velocity",AVERAGE)
+  );
+  ProfileElement::PIterator radial2 = std::find_if(
+    this->AdditionalProfileQuantities.begin(), this->AdditionalProfileQuantities.end(),
+    ProfileElement::FindProfile("radial velocity squared",AVERAGE)
+  );
 
   // PostProcessFunc
   this->AdditionalProfileQuantities.push_back(
     ProfileElement("velocity dispersion",3,
     &ComputeVelocityDispersion,
-    "velocity squared",AVERAGE,
-    "velocity",AVERAGE));
+    velocity2, velocity));
   this->AdditionalProfileQuantities.push_back(
     ProfileElement("tangential velocity dispersion",3,
     &ComputeVelocityDispersion,
-    "tangential velocity squared",AVERAGE,
-    "tangential velocity",AVERAGE));
+    tangential2, tangential));
   this->AdditionalProfileQuantities.push_back(
     ProfileElement("radial velocity dispersion",3,
     &ComputeVelocityDispersion,
-    "radial velocity squared",AVERAGE,
-    "radial velocity",AVERAGE));
+    radial2, radial));
   this->AdditionalProfileQuantities.push_back(
     ProfileElement("circular velocity",1,
     &ComputeCircularVelocity,
-    massArray->GetName(),CUMULATIVE,
-    "bin radius",TOTAL));
+    mass, binradius));
   this->AdditionalProfileQuantities.push_back(
     ProfileElement("density",1,
     &ComputeDensity,
-    massArray->GetName(),CUMULATIVE,
-    "bin radius",TOTAL));
+    mass, binradius));
+
+  //
+  // Allocate vtk Arrays and add to output vtkTable
+  //
+  for (int i=0; i<this->ProfileQuantities.size(); i++) {
+    vtkFloatArray *farray = this->ProfileQuantities[i].AllocateBinArray(this->BinNumber);
+    output->AddColumn(farray);
+  }
+
+  for (int i=0; i<this->AdditionalProfileQuantities.size(); ++i) {
+    vtkFloatArray *farray = this->AdditionalProfileQuantities[i].AllocateBinArray(this->BinNumber);
+    output->AddColumn(farray);
+  }
+
+  // setting the bin radii in the output
+  ProfileElement &binradii = this->ProfileQuantities[BinRadius];
+  ProfileElement &binradiimin = this->ProfileQuantities[BinRadiusMin];
+  this->SetBoundsAndBinExtents(input,centerInfo); 
+  for(int binNum = 0; binNum < this->BinNumber; ++binNum)
+  {
+    double radiusmax = (binNum+1)*this->BinSpacing;
+    double radiusmin =  binNum*this->BinSpacing;
+    this->UpdateBin(binNum, SET, binradii,    &radiusmax);
+    this->UpdateBin(binNum, SET, binradiimin, &radiusmin);     
+  }  
 
   // runs in parallel, syncing class member data, if necessary, if not
   // functions in serial
-  this->SetBoundsAndBinExtents(input,centerInfo); 
   if(RunInParallel(this->Controller))
     {
     int procId=this->Controller->GetLocalProcessId();
@@ -327,79 +424,6 @@ int vtkProfileFilter::GetBinNumber(double x[])
 //----------------------------------------------------------------------------
 void vtkProfileFilter::InitializeBins(vtkPointSet* input, vtkTable* output)
 {
-  //
-  // create default arrays
-  //
-  this->ProfileQuantities.push_back(
-    ProfileElement("bin radius", 1,   
-    (DoubleFunction0)(NULL), 
-    TOTAL));
-
-  this->ProfileQuantities.push_back(
-    ProfileElement("bin radius min", 1,   
-    (DoubleFunction0)(NULL), 
-    TOTAL));
-
-  this->ProfileQuantities.push_back(
-    ProfileElement("number in bin", 1,   
-    (DoubleFunction0)(NULL), 
-    TOTAL));
-
-  this->ProfileQuantities.push_back(
-    ProfileElement("number in bin", 1,   
-    (DoubleFunction0)(NULL), 
-    CUMULATIVE));
-
-  vtkPointData *pd = input->GetPointData();
-  for(int i=0; i<pd->GetNumberOfArrays(); ++i)
-  {
-    vtkSmartPointer<vtkDataArray> nextArray = pd->GetArray(i);
-    int numComponents = nextArray->GetNumberOfComponents();
-    const char *baseName = nextArray->GetName();
-
-    this->ProfileQuantities.push_back(
-      ProfileElement(baseName, numComponents,   
-      (DoubleFunction0)(NULL), 
-      TOTAL));
-    this->ProfileQuantities.push_back(
-      ProfileElement(baseName, numComponents,   
-      (DoubleFunction0)(NULL), 
-      AVERAGE));
-    this->ProfileQuantities.push_back(
-      ProfileElement(baseName, numComponents,   
-      (DoubleFunction0)(NULL), 
-      CUMULATIVE));
-  }
-
-  //
-  // Allocate vtk Arrays and add to table
-  //
-  for (int i=0; i<this->ProfileQuantities.size(); i++) {
-    vtkFloatArray *farray = this->ProfileQuantities[i].AllocateBinArray(this->BinNumber);
-    output->AddColumn(farray);
-  }
-
-  // setting the bin radii in the output
-  ProfileElement &binradii = this->ProfileQuantities[BinRadius];
-  ProfileElement &binradiimin = this->ProfileQuantities[BinRadiusMin];
-  for(int binNum = 0; binNum < this->BinNumber; ++binNum)
-    {
-    double radiusmax = (binNum+1)*this->BinSpacing;
-    double radiusmin =  binNum*this->BinSpacing;
-    this->UpdateBin(binNum, SET, binradii,    &radiusmax);
-    this->UpdateBin(binNum, SET, binradiimin, &radiusmin);     
-    }
-  
-  // For our additional quantities, allocating a column for the average 
-  // and the sum. These are currently restricted to be 3-vectors
-  for(int i=0; i<this->AdditionalProfileQuantities.size(); ++i)
-    {
-    ProfileElement &nextElement = this->AdditionalProfileQuantities[i];
-    AllocateDataArray(output, 
-      nextElement.GetColumnName(),
-      nextElement.NumberComponents,
-      this->BinNumber);
-    }
 }
 
 //----------------------------------------------------------------------------
@@ -534,21 +558,18 @@ void   vtkProfileFilter::BinAveragesAndPostprocessing(
     // do this within the average loop as these quantities are allowed
     // to depend on averages themselves
 
-    double newValue[3];
     for (int i=0; i<this->AdditionalProfileQuantities.size(); ++i)
     {
       ProfileElement &profile = this->AdditionalProfileQuantities[i];
       if (profile.FuntionType==POSTPROCESS_TYPE)
       {
-        vtkVariant argumentOne = 
-          this->GetData(binNum, nextElement.ArgOneBaseName.c_str(),
-          nextElement.ArgOneColumnType, output);
-        vtkVariant argumentTwo = \
-          this->GetData(binNum, nextElement.ArgTwoBaseName.c_str(),
-          nextElement.ArgTwoColumnType,  output);
-        nextElement.funcP(argumentOne,argumentTwo, newValue);     
-        this->UpdateBin(binNum,SET,nextElement.BaseName.c_str(),TOTAL,
-          newValue,output);
+        ProfileElement::PIterator profile1 = profile.ArgOne;
+        ProfileElement::PIterator profile2 = profile.ArgTwo;
+        double arg1[3], arg2[3], newval[3];
+        (*profile.ArgOne).Data->GetTuple(binNum, arg1);
+        (*profile.ArgTwo).Data->GetTuple(binNum, arg2);
+        profile.funcP(arg1,arg2, newval);     
+        this->UpdateBin(binNum, SET, profile, newval);
       }
     }
   }
@@ -574,9 +595,10 @@ std::string vtkProfileFilter::GetColumnNameSlow(const char *baseName,
 
 //----------------------------------------------------------------------------
 void vtkProfileFilter::MergeBins(int binNum, BinUpdateType updateType,
-   ProfileElement &profile, vtkTable* originalTable,
+   const char *baseName, ColumnType columnType, vtkTable* originalTable,
   vtkTable* tableToMerge)
 {
+/*
   vtkVariant originalData = this->GetData(binNum,baseName,columnType,
     originalTable);
   vtkVariant mergeData = this->GetData(binNum,baseName,columnType,
@@ -592,35 +614,33 @@ void vtkProfileFilter::MergeBins(int binNum, BinUpdateType updateType,
     this->UpdateDoubleBin(binNum,updateType,baseName,columnType,
       mergeData.ToDouble(),originalData.ToDouble(),originalTable);
     }
+*/
 }
 
 //----------------------------------------------------------------------------
 void vtkProfileFilter::UpdateBin(int binNum, BinUpdateType updateType,
    ProfileElement &profile, double *updateData)
 {
-  double *oldData = &profile.DataPointer[binNum*profile.NumberComponents];
-  UpdateBin(updateType, profile, updateData, oldData);
+  float *tableData = &profile.DataPointer[binNum*profile.NumberComponents];
+  UpdateBin<double>(updateType, profile, tableData, updateData);
 }
 //----------------------------------------------------------------------------
+template<typename T>
 void vtkProfileFilter::UpdateBin(BinUpdateType updateType,
-   ProfileElement &profile, double *updateData, double *oldData)
+   ProfileElement &profile, float *tableData, T *newData)
 {
-
   for (int i=0; i<profile.NumberComponents; i++) {
-    switch (updateType)
-      {
+    switch (updateType) {
       case ADD:
-        updateData += oldData;
+        tableData[i] += newData[i];
         break;
       case MULTIPLY:
-        updateData *= oldData;
+        tableData[i] *= newData[i];
         break;
       case SET:
-        updateData = oldData;
+        tableData[i] = newData[i];
         break;
-      }
-    updateData++;
-    oldData++;
+    }
   }
 }
 
@@ -680,27 +700,23 @@ vtkProfileFilter::ProfileElement::ProfileElement(const char *baseName,
   this->BaseName          = baseName;
   this->NumberComponents  = numberComponents;
   this->ProfileColumnType = columnType;
-  this->funcP             = funcPtr;
   this->FuntionType       = NULL_FUNC;
   this->CreateColumnNames();;
 }
 
 //----------------------------------------------------------------------------
 vtkProfileFilter::ProfileElement::ProfileElement(const char *baseName, 
-  int numberComponents, PostProcessFunc funcPtr,
-  const char*argOneBaseName, ColumnType argOneColumnType, 
-  const char*argTwoBaseName, ColumnType argTwoColumnType)
+	int numberComponents, DoubleFunction0 funcPtr,
+			PIterator argOne, PIterator argTwo)
 {
   this->BaseName          = baseName;
   this->NumberComponents  = numberComponents;
   this->ProfileColumnType = TOTAL;
   this->funcP             = funcPtr;
   this->FuntionType       = POSTPROCESS_TYPE;
-  this->ArgOneBaseName    = argOneBaseName;
-  this->ArgOneColumnType  = argOneColumnType;
-  this->ArgTwoBaseName    = argTwoBaseName;
-  this->ArgTwoColumnType  = argTwoColumnType;
-  this->CreateColumnNames();;
+  this->ArgOne            = argOne;
+  this->ArgTwo            = argTwo;
+  this->CreateColumnNames();
 }
 
 //----------------------------------------------------------------------------
@@ -711,32 +727,33 @@ vtkProfileFilter::ProfileElement::~ProfileElement()
 //----------------------------------------------------------------------------
 void vtkProfileFilter::ProfileElement::CreateColumnNames()
 {
-  this->NameAverage    = this->BaseName + "_average"; 
-  this->NameTotal      = this->BaseName + "_total"; 
-  this->NameCumulative = this->BaseName + "_cumulative"; 
-}
-//----------------------------------------------------------------------------
-const char *vtkProfileFilter::ProfileElement::GetColumnName()
-{
   switch(this->ProfileColumnType)
     {
     case AVERAGE:
-      return this->NameAverage.c_str();
+      this->DerivedName = this->BaseName + "_average";
+      break;
     case TOTAL:
-      return this->NameTotal.c_str();
+      this->DerivedName = this->BaseName + "_total";
+      break;
     case CUMULATIVE:
-      return this->NameCumulative.c_str();
+      this->DerivedName = this->BaseName + "_cumulative";
+      break;
     default:
-      vtkGenericWarningMacro("columnType not found for function GetColumnName, returning error string");
-      return "error";
+      vtkGenericWarningMacro("columnType not found for function CreateColumnNames, returning error string");
+      this->DerivedName = "error";
     }
 }
 //----------------------------------------------------------------------------
-vtkFloatArray *vtkProfileFilter::AllocateBinArray(vtkIdType numtuples)
+const char *vtkProfileFilter::ProfileElement::GetColumnName() const
+{
+  return this->DerivedName.c_str();
+}
+//----------------------------------------------------------------------------
+vtkFloatArray *vtkProfileFilter::ProfileElement::AllocateBinArray(vtkIdType numtuples)
 {
 	this->Data = vtkSmartPointer<vtkFloatArray>::New();
 	this->Data->SetNumberOfComponents(this->NumberComponents);
-	this->Data->SetNumberOfTuples(numTuples);
+	this->Data->SetNumberOfTuples(numtuples);
 	this->Data->SetName(this->GetColumnName());
 	this->DataPointer = this->Data->GetPointer(0);
 	//initializes everything to zero
@@ -744,4 +761,5 @@ vtkFloatArray *vtkProfileFilter::AllocateBinArray(vtkIdType numtuples)
 		{
 		this->DataPointer[i] = 0.0;
 		}
+  return this->Data;
 }

@@ -329,7 +329,7 @@ void VecMultConstant(double vector[],double constant);
 // Description
 // Given a vSquaredAve and a vAve calculates the velocity dispersion
 // placing it in the output vector velocityDispersion
-void ComputeVelocityDispersion(vtkVariant vSquaredAve, vtkVariant vAve, double result[]);
+void ComputeVelocityDispersion(double *vSquaredAve, double *vAve, double *result);
 	
 // Description:
 // helper function to compute radial velocity
@@ -353,17 +353,15 @@ double ComputeRadialVelocitySquared(double v[],double r[]);
 
 // Description:
 // helper function to compute tangential velocity squared
-void ComputeTangentialVelocitySquared(double v[],double r[], double result[]);
+double ComputeTangentialVelocitySquared(double v[],double r[]);
 
 // Description:
 // helper function to compute circular velocity
-void ComputeCircularVelocity(vtkVariant cumulativeMass, 
-	vtkVariant binRadius, double result[]);
+void ComputeCircularVelocity(double *cumulativeMass, double *binRadius, double result[]);
 
 // Description:
 // helper function to compute density
-void ComputeDensity(vtkVariant cumulativeMass, 
-	vtkVariant binRadius, double result[]);
+void ComputeDensity(double *cumulativeMass, double *binRadius, double result[]);
 	
 // Description:
 // Helper function to compute the midpoint between two points
