@@ -342,43 +342,43 @@ void vtkProfileFilter::MergeTables(vtkPointSet* input,
     //
     // Get the data pointers for local and (remote) data to be merged
     //
-    vtkFloatArray *fromArray = vtkFloatArray::SafeDownCast(
+    vtkFloatArray *updateArray = vtkFloatArray::SafeDownCast(
       tableToMerge->GetColumnByName(profile.GetColumnName()));
 
-    if (!fromArray || fromArray->GetNumberOfTuples()!=this->BinNumber) {
+    if (!updateArray || updateArray->GetNumberOfTuples()!=this->BinNumber) {
       vtkErrorMacro(<<"Fatal : The columns being merged are not correct");
       return;
     }
     //
-    // We've not got the two array pointers. Loop aver bins doing the merge
+    // We've now got the two array pointers. Loop aver bins doing the merge
     //
     for (int binNum = 0; binNum<this->BinNumber; ++binNum) {
-      float *fromData = fromArray->GetPointer(binNum);
-      this->UpdateBin<float>(binNum, ADD, profile, fromData);
+      float *updateData = updateArray->GetPointer(binNum*profile.NumberComponents);
+      this->UpdateBin<float>(binNum, ADD, profile, updateData);
     }
   }
 
   //
-  // Cut and paste from above using the additional profiles array
+  // Cut and paste from above using the additional profiles array (from zero)
   //
   for (int i=0; i<this->AdditionalProfileQuantities.size(); ++i) {
     ProfileElement &profile = this->AdditionalProfileQuantities[i];
     //
     // Get the data pointers for local and (remote) data to be merged
     //
-    vtkFloatArray *fromArray = vtkFloatArray::SafeDownCast(
+    vtkFloatArray *updateArray = vtkFloatArray::SafeDownCast(
       tableToMerge->GetColumnByName(profile.GetColumnName())
     );
-    if (!fromArray || fromArray->GetNumberOfTuples()!=this->BinNumber) {
+    if (!updateArray || updateArray->GetNumberOfTuples()!=this->BinNumber) {
       vtkErrorMacro(<<"Fatal : The columns being merged are not correct");
       return;
     }
     //
-    // We've not got the two array pointers. Loop aver bins doing the merge
+    // We've now got the two array pointers. Loop aver bins doing the merge
     //
     for (int binNum = 0; binNum<this->BinNumber; ++binNum) {
-      float *fromData = fromArray->GetPointer(binNum);
-      this->UpdateBin<float>(binNum, ADD, profile, fromData);
+      float *updateData = updateArray->GetPointer(binNum*profile.NumberComponents);
+      this->UpdateBin<float>(binNum, ADD, profile, updateData);
     }
   }
 }
