@@ -86,6 +86,7 @@ void vtkMomentsOfInertiaFilter::UpdateInertiaTensor(vtkPointSet* input,
 	vtkstd::string massArrayName, double* centerPoint, 
 	double inertiaTensor[3][3])
 {
+  double radius[3];
 	for(unsigned long nextPointId = 0;\
 	 		nextPointId < input->GetPoints()->GetNumberOfPoints();\
 	 		++nextPointId)
@@ -96,7 +97,7 @@ void vtkMomentsOfInertiaFilter::UpdateInertiaTensor(vtkPointSet* input,
 		// GetTuple function which operates with float
 		double* mass=GetDataValue(input,massArrayName.c_str(),nextPointId);
 		// get distance from nextPoint to center point
-		double* radius = PointVectorDifference(nextPoint,centerPoint);
+    vtkMath::Subtract(nextPoint,centerPoint,radius);
 		// update the components of the inertia tensor
 		inertiaTensor[0][0]+=mass[0]*(pow(nextPoint[1],2)+pow(nextPoint[2],2));
 		inertiaTensor[1][1]+=mass[0]*(pow(nextPoint[0],2)+pow(nextPoint[2],2));
@@ -105,7 +106,6 @@ void vtkMomentsOfInertiaFilter::UpdateInertiaTensor(vtkPointSet* input,
 		inertiaTensor[0][2]+=mass[0]*nextPoint[0]*nextPoint[2];		
 		inertiaTensor[1][2]+=mass[0]*nextPoint[1]*nextPoint[2];		
 		// Finally, some memory management
-		delete [] radius;
 		delete [] mass;
 		delete [] nextPoint;
 		}

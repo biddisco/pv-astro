@@ -91,7 +91,7 @@ public:
 	explicit proto_data( TreeType_& AMRtree )
 	: m_tree(AMRtree), m_cpu( AMRtree.m_cpu ), 
 	  m_minlevel( AMRtree.m_minlevel ), m_maxlevel( AMRtree.m_maxlevel ),
-		m_twotondim( (unsigned)(pow(2, AMRtree.m_header.ndim)+0.5) )
+		m_twotondim( (unsigned)(pow((double)2, (double)AMRtree.m_header.ndim)+0.5) )
 	{ }
 
 	//! access the value of the cells associated with the oct designated by the iterator

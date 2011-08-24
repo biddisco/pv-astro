@@ -20,6 +20,7 @@
 #include "vtkSmartPointer.h"
 #include "vtkDataArraySelection.h"
 #include "vtkMultiProcessController.h"
+#include <time.h>
 #include <cmath>
 #include <assert.h>
 #include <string>
@@ -746,7 +747,7 @@ int vtkRamsesReader::RequestData(vtkInformation*,
 		if(this->Controller!=NULL) {
       int size=this->Controller->GetNumberOfProcesses();
       int rank=this->Controller->GetLocalProcessId();
-      leftover_particles_thisproc = floor(leftover_particles/size);
+      leftover_particles_thisproc = floor((double)leftover_particles/size);
       if(rank==0){
         // process 0 takes the extra particles
         leftover_particles_thisproc+=(leftover_particles-leftover_particles_thisproc*size);

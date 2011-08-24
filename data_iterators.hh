@@ -37,10 +37,10 @@ class conditional_back_insert_iterator
 		
 		//! TBD
 		conditional_back_insert_iterator&
-		operator=( typename _Container::const_reference __value )
+		operator=( typename _Container::const_reference _value )
 		{
 			if( *cond_iterator )
-				container->push_back(__value);
+				container->push_back(_value);
 			++cond_iterator;
 			return *this;
 		}
