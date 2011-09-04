@@ -242,19 +242,39 @@ int vtkGraficReader::RequestData(vtkInformation*,
   nDark = fioGetN(grafic,FIO_SPECIES_DARK);
   nStar = fioGetN(grafic,FIO_SPECIES_STAR);
 	
+// TODO :here's where we define this  
+  // Gas
+  unsigned long gasPieceSize = floor(nGas*1./this->UpdateNumPieces);
+	unsigned long gasBeginIndex = this->UpdatePiece*gasPieceSize;
+	unsigned long gasEndIndex = (this->UpdatePiece == this->UpdateNumPieces - 1) ? nGas : (this->UpdatePiece+1)*gasPieceSize;
+
+  // Dark
+  unsigned long darkPieceSize = floor(nDark*1./this->UpdateNumPieces);
+	unsigned long darkBeginIndex = this->UpdatePiece*darkPieceSize;
+	unsigned long darkEndIndex = (this->UpdatePiece == this->UpdateNumPieces - 1) ? nDark : (this->UpdatePiece+1)*darkPieceSize;
+
+  // Stars
+  unsigned long starPieceSize = floor(nDark*1./this->UpdateNumPieces);
+	unsigned long starBeginIndex = this->UpdatePiece*starPieceSize;
+	unsigned long starEndIndex = (this->UpdatePiece == this->UpdateNumPieces - 1) ? nStar : (this->UpdatePiece+1)*starPieceSize;
+  // All
+  unsigned long pieceSize =  gasPieceSize + darkPieceSize + starPieceSize;
+  
+  
+  
 	// Allocate the arrays
-	this->AllocateAllGraficVariableArrays(nTot, output);
+	this->AllocateAllGraficVariableArrays(pieceSize, output);
   // particle variables
   uint64_t piOrder;
   double pdPos[3],pdVel[3];
   float pfMass,pfSoft,pfPot,pfRho,pfTemp,pfMetals,pfTform;
 	// loop variable
-	uint64_t i;
+	unsigned long i;
 	// loop variable
-	uint64_t idx;
+	unsigned long idx;
 	
 	// read/write star, 
-  for(i=0; i<nStar; i++) {
+  for(i=starBeginIndex; i<starEndIndex; i++) {
     fioSeek(grafic,i,FIO_SPECIES_STAR);    
     fioReadStar(grafic,
 								&piOrder,pdPos,pdVel,&pfMass,&pfSoft,&pfPot,&pfMetals,&pfTform);
@@ -274,7 +294,7 @@ int vtkGraficReader::RequestData(vtkInformation*,
 		this->Tform->SetTuple1(idx,pfTform);
   }
 	// read/write dark
-  for(i=0; i<nDark; i++) {
+  for(i=darkBeginIndex; i<darkEndIndex; i++) {
     fioSeek(grafic,i,FIO_SPECIES_DARK);
     fioReadDark(grafic,
 								&piOrder,pdPos,pdVel,&pfMass,&pfSoft,&pfPot);
@@ -292,7 +312,7 @@ int vtkGraficReader::RequestData(vtkInformation*,
 		this->Potential->SetTuple1(idx,pfPot);
   }
 	// read/write gas
-  for(i=0; i<nGas; i++) {
+  for(i=gasBeginIndex; i<gasEndIndex; i++) {
     fioSeek(grafic,i,FIO_SPECIES_SPH);
     fioReadSph(grafic,
 							 &piOrder,pdPos,pdVel,&pfMass,&pfSoft,&pfPot,&pfRho,&pfTemp,&pfMetals);
