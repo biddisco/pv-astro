@@ -12,7 +12,6 @@ INCLUDE(${PARAVIEW_USE_FILE})
 #   o Tipsy binary reader
 #   o Ramses binary reader
 #   o Grafic binary reader
-#   o Gadget binary reader 
 #   o color bars equivalent to those available in tipsy
 #   o smoothing filter (recommended to use pv-meshless SPH Smooth utility)
 #   o center of mass filter 
@@ -83,13 +82,13 @@ ADD_PARAVIEW_PLUGIN(AstroVizPlugin "1.1"
         TrackFilterSM.xml
         SimpleBinSM.xml
 		RamsesReaderSM.xml
-		GadgetReaderSM.xml
+		#GadgetReaderSM.xml
 
 	GUI_RESOURCES
 		TipsyReader.qrc
         SQLiteReader.qrc
 		RamsesReader.qrc
-		GadgetReader.qrc
+		#GadgetReader.qrc
 		GraficReader.qrc		
 	GUI_RESOURCE_FILES
 		AstroVizFilterMenu.xml

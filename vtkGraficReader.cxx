@@ -259,7 +259,11 @@ int vtkGraficReader::RequestData(vtkInformation*,
 	unsigned long starEndIndex = (this->UpdatePiece == this->UpdateNumPieces - 1) ? nStar : (this->UpdatePiece+1)*starPieceSize;
   // All
   unsigned long pieceSize =  gasPieceSize + darkPieceSize + starPieceSize;
-  
+   
+  vtkDebugMacro("sizes gas ps,bi,ei: " << gasPieceSize << " " << gasBeginIndex << " " << gasEndIndex << "\n"
+                << "sizes dark ps,bi,ei: " << darkPieceSize << " " << darkBeginIndex << " " << darkEndIndex << "\n"
+                << "sizes star ps,bi,ei: " << starPieceSize << " " << starBeginIndex << " " << starEndIndex << "\n"
+                );
   
   
 	// Allocate the arrays
