@@ -260,7 +260,7 @@ int vtkGraficReader::RequestData(vtkInformation*,
   // All
   unsigned long pieceSize =  gasPieceSize + darkPieceSize + starPieceSize;
    
-  vtkErrorMacro("sizes gas ps,bi,ei: " << gasPieceSize << " " << gasBeginIndex << " " << gasEndIndex << "\n"
+  vtkDebugMacro("sizes gas ps,bi,ei: " << gasPieceSize << " " << gasBeginIndex << " " << gasEndIndex << "\n"
                 << "sizes dark ps,bi,ei: " << darkPieceSize << " " << darkBeginIndex << " " << darkEndIndex << "\n"
                 << "sizes star ps,bi,ei: " << starPieceSize << " " << starBeginIndex << " " << starEndIndex << "\n"
                 << "going to allocate : " << pieceSize << " on proc " << this->UpdatePiece
