@@ -1,10 +1,5 @@
 /*=========================================================================
 
-TODO:
-	- this->bincount isnt updated when switching set #bins manually
-	- implement better binning (workinprogress)
-
-
   Program:   
   Module:    vtkSimpleBin.cxx
 
@@ -256,7 +251,7 @@ int vtkSimpleBin::RequestData(vtkInformation*,
 	for (int row = 0; row<nBin; ++row)
 	{
 		int num = output->GetValue(row,0).ToInt(); //get number of values in this bin
-		if (num == 0)
+		if (num == 0) //if 0 entries in this bin, set value to 0 (for not getting /0 errors)
 		{
 			if (this->Del0Row){remrow.push_back(row);}
 			else

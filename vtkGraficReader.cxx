@@ -41,6 +41,7 @@ vtkStandardNewMacro(vtkGraficReader);
 
 // TODO: re-put these in helper library, rather than JB's separated out 1 per file awkward
 
+int ONLY_POS=1;
 //----------------------------------------------------------------------------
 vtkSmartPointer<vtkDoubleArray> AllocateDoubleDataArray(
   vtkDataSet *output, const char* arrayName, int numComponents, unsigned long numTuples)
@@ -141,18 +142,22 @@ void vtkGraficReader::AllocateAllGraficVariableArrays(vtkIdType numBodies,
     cells[i*2+1] = i;
   }
 
-  //
-  this->GlobalIds = vtkSmartPointer<vtkIdTypeArray>::New();
-  this->GlobalIds->SetName("global_id");
-  this->GlobalIds->SetNumberOfTuples(numBodies);
 
  // Storing the points and cells in the output data object.
   output->SetPoints(this->Positions);
   output->SetVerts(this->Vertices); 
-
   // allocate velocity first as it uses the most memory and on my win32 machine 
   // this helps load really big data without alloc failures.
-  this->Velocity = AllocateDoubleDataArray(output,"velocity",3,numBodies);
+
+  // TODO: add this back in later
+  /*
+  if(ONLY_POS!=1){
+  //
+    this->GlobalIds = vtkSmartPointer<vtkIdTypeArray>::New();
+    this->GlobalIds->SetName("global_id");
+    this->GlobalIds->SetNumberOfTuples(numBodies);
+
+    this->Velocity = AllocateDoubleDataArray(output,"velocity",3,numBodies);
 	
 	this->Mass = AllocateFloatDataArray(output,"mass",1,numBodies);
 	this->EPS = AllocateFloatDataArray(output,"eps",1,numBodies);
@@ -162,6 +167,8 @@ void vtkGraficReader::AllocateAllGraficVariableArrays(vtkIdType numBodies,
 	this->Metals = AllocateFloatDataArray(output,"metals",1,numBodies);
 	this->Tform = AllocateFloatDataArray(output,"tform",1,numBodies);
 	this->Type = AllocateIntDataArray(output,"type",1,numBodies);
+  }
+  */
 	
 }
 //----------------------------------------------------------------------------
@@ -260,15 +267,15 @@ int vtkGraficReader::RequestData(vtkInformation*,
   // All
   unsigned long pieceSize =  gasPieceSize + darkPieceSize + starPieceSize;
    
-  vtkDebugMacro("sizes gas ps,bi,ei: " << gasPieceSize << " " << gasBeginIndex << " " << gasEndIndex << "\n"
+  vtkErrorMacro("sizes gas ps,bi,ei: " << gasPieceSize << " " << gasBeginIndex << " " << gasEndIndex << "\n"
                 << "sizes dark ps,bi,ei: " << darkPieceSize << " " << darkBeginIndex << " " << darkEndIndex << "\n"
                 << "sizes star ps,bi,ei: " << starPieceSize << " " << starBeginIndex << " " << starEndIndex << "\n"
                 << "going to allocate : " << pieceSize << " on proc " << this->UpdatePiece
                 );
   
-  
 	// Allocate the arrays
 	this->AllocateAllGraficVariableArrays(pieceSize, output);
+	vtkErrorMacro("allocated the variable arrays on "<< this->UpdatePiece <<"\n");
   
   // particle variables
   uint64_t piOrder;
@@ -289,18 +296,23 @@ int vtkGraficReader::RequestData(vtkInformation*,
 		//fprintf(stdout,"%d,%llu,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",
 		//				FIO_SPECIES_STAR,piOrder,pdPos[0],pdPos[1],pdPos[2],pdVel[0],pdVel[1],pdVel[2],pfMass,pfSoft,pfPot);
 		idx=i-starBeginIndex;
-		this->GlobalIds->SetTuple1(idx,piOrder);
-		this->Type->SetTuple1(idx,FIO_SPECIES_STAR);
 		this->Positions->SetPoint(idx, pdPos);
-    this->Velocity->SetTuple(idx, pdVel);
-		this->Mass->SetTuple1(idx,pfMass);
-		this->EPS->SetTuple1(idx,pfSoft);
-		this->Potential->SetTuple1(idx,pfPot);
-		// only star has this		
-		this->Metals->SetTuple1(idx,pfMetals);
-		this->Tform->SetTuple1(idx,pfTform);
+		//TODO: add in later
+		/*
+		if(ONLY_POS!=1) {
+		  this->GlobalIds->SetTuple1(idx,piOrder);
+		  this->Type->SetTuple1(idx,FIO_SPECIES_STAR);
+		  
+		  this->Velocity->SetTuple(idx, pdVel);
+		  this->Mass->SetTuple1(idx,pfMass);
+		  this->EPS->SetTuple1(idx,pfSoft);
+		  this->Potential->SetTuple1(idx,pfPot);
+		  // only star has this		
+		  this->Metals->SetTuple1(idx,pfMetals);
+		  this->Tform->SetTuple1(idx,pfTform);
+		}
+		*/
   }
-  
   
 	// read/write dark
   for(i=darkBeginIndex; i<darkEndIndex; i++) {
@@ -311,14 +323,23 @@ int vtkGraficReader::RequestData(vtkInformation*,
 		//				FIO_SPECIES_DARK,piOrder,pdPos[0],pdPos[1],pdPos[2],pdVel[0],pdVel[1],pdVel[2],pfMass,pfSoft,pfPot);
 
 		idx=starPieceSize+(i-darkBeginIndex);
-		// all particle types have this
-		this->GlobalIds->SetTuple1(idx,piOrder);
-		this->Type->SetTuple1(idx,FIO_SPECIES_DARK);
-		this->Positions->SetPoint(idx, pdPos);		
-    this->Velocity->SetTuple(idx, pdVel);
-		this->Mass->SetTuple1(idx,pfMass);
-		this->EPS->SetTuple1(idx,pfSoft);
-		this->Potential->SetTuple1(idx,pfPot);
+		this->Positions->SetPoint(idx, pdPos);
+		if(i%10000000==0){
+		  vtkErrorMacro("read another 10000000 dark");
+		}
+
+		/*
+		if(ONLY_POS!=1){
+		  // all particle types have this
+		  this->GlobalIds->SetTuple1(idx,piOrder);
+		  this->Type->SetTuple1(idx,FIO_SPECIES_DARK);
+
+		  this->Velocity->SetTuple(idx, pdVel);
+		  this->Mass->SetTuple1(idx,pfMass);
+		  this->EPS->SetTuple1(idx,pfSoft);
+		  this->Potential->SetTuple1(idx,pfPot);
+		}
+		*/
   }
 
 	// read/write gas
@@ -329,25 +350,29 @@ int vtkGraficReader::RequestData(vtkInformation*,
     //fprintf(stdout,"%d,%llu,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",
 		//				FIO_SPECIES_SPH,piOrder,pdPos[0],pdPos[1],pdPos[2],pdVel[0],pdVel[1],pdVel[2],pfMass,pfSoft,pfPot);
 		idx=starPieceSize+darkPieceSize+(i-gasBeginIndex);
-		// all particle types have this
-		this->GlobalIds->SetTuple1(idx,piOrder);
-		this->Type->SetTuple1(idx,FIO_SPECIES_SPH);
 		this->Positions->SetPoint(idx, pdPos);		
-    this->Velocity->SetTuple(idx, pdVel);
-		this->Mass->SetTuple1(idx,pfMass);
-		this->EPS->SetTuple1(idx,pfSoft);
-		this->Potential->SetTuple1(idx,pfPot);
-		// only gas has
-		this->RHO->SetTuple1(idx,pfRho);
-		this->Temperature->SetTuple1(idx,pfTemp);
-		this->Metals->SetTuple1(idx,pfMetals);
+		if(i%10000000==0){
+		  vtkErrorMacro("read another 10000000 gas");
+		}
+		/*
+                if(ONLY_POS!=1){
+		  // all particle types have this
+		  this->GlobalIds->SetTuple1(idx,piOrder);
+		  this->Type->SetTuple1(idx,FIO_SPECIES_SPH);
+		  this->Velocity->SetTuple(idx, pdVel);
+		  this->Mass->SetTuple1(idx,pfMass);
+		  this->EPS->SetTuple1(idx,pfSoft);
+		  this->Potential->SetTuple1(idx,pfPot);
+		  // only gas has
+		  this->RHO->SetTuple1(idx,pfRho);
+		  this->Temperature->SetTuple1(idx,pfTemp);
+		  this->Metals->SetTuple1(idx,pfMetals);
+		  }
+		*/
   }
-	
-	
-	
-  vtkDebugMacro("Reading all points from file " << this->FileName);
+  vtkErrorMacro("Reading all points from file " << this->FileName);
     // Read Successfully
-  vtkDebugMacro("Read " << output->GetPoints()->GetNumberOfPoints() \
+  vtkErrorMacro("Read " << output->GetPoints()->GetNumberOfPoints() \
 		<< " points.");
   // release memory smartpointers - just to play safe.
   this->Vertices    = NULL;

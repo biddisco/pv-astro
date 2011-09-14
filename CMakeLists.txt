@@ -86,7 +86,7 @@ ADD_PARAVIEW_PLUGIN(AstroVizPlugin "1.1"
 
 	GUI_RESOURCES
 		TipsyReader.qrc
-        SQLiteReader.qrc
+        	SQLiteReader.qrc
 		RamsesReader.qrc
 		#GadgetReader.qrc
 		GraficReader.qrc		
@@ -144,6 +144,7 @@ ADD_LIBRARY(
 		sqlitelib/sqlite3.c
 	)
 
+SET_TARGET_PROPERTIES(SQLitelib PROPERTIES COMPILE_FLAGS "-fPIC")
 #For the Grafic reader plugin (and later) integrated tipsy HDF, tipsy binary, and grafic reader I use some of Doug Potter's/Joachim Stadel's fio
 # For the Tipsy reader plugin I use some of Doug Potter's Tipsy lib.
 # TODO: this is not working, hardcoding library path for now

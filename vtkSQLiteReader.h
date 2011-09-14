@@ -44,6 +44,8 @@ class VTK_EXPORT vtkSQLiteReader : public vtkPolyDataAlgorithm
 public:
 	static vtkSQLiteReader* New();
 	vtkTypeRevisionMacro(vtkSQLiteReader,vtkPolyDataAlgorithm);
+	void PrintSelf(ostream& os, vtkIndent indent);
+
 	// Set/Get the name of the file from which to read points.
 	vtkSetStringMacro(FileName);
  	vtkGetStringMacro(FileName);
@@ -64,51 +66,6 @@ public:
 	vtkGetMacro(LowerLimit,double);
 
 
-/*
-	vtkSetMacro(DisplayOnlySelectedData,bool);
-	vtkGetMacro(DisplayOnlySelectedData,bool);
-
-	vtkSetMacro(DisplaySelected,bool);
-	vtkGetMacro(DisplaySelected,bool);
-
-		vtkSetMacro(DisplaySelectedSnapshot,bool);
-		vtkGetMacro(DisplaySelectedSnapshot,bool);
-		vtkSetMacro(DisplaySelectedSnapshotNr,int);
-		vtkGetMacro(DisplaySelectedSnapshotNr,int);
-		vtkSetMacro(DisplaySelectedTrack,bool);
-		vtkGetMacro(DisplaySelectedTrack,bool);
-		vtkSetMacro(DisplaySelectedTrackNr,int);
-		vtkGetMacro(DisplaySelectedTrackNr,int);
-
-
-	vtkSetMacro(DisplayCalculated,bool);
-	vtkGetMacro(DisplayCalculated,bool);
-
-		vtkSetMacro(CalculationImpactParameter,double);
-		vtkGetMacro(CalculationImpactParameter,double);
-
-		vtkSetMacro(calcHighlightCollisionPoints,bool);
-		vtkGetMacro(calcHighlightCollisionPoints,bool);
-
-		vtkSetMacro(calcHighlightTrack,bool);
-		vtkGetMacro(calcHighlightTrack,bool);
-		vtkSetMacro(calcHighlightSnapshot,bool);
-		vtkGetMacro(calcHighlightSnapshot,bool);
-		vtkSetMacro(calcHighlightPoint,bool);
-		vtkGetMacro(calcHighlightPoint,bool);
-		vtkSetMacro(calcHighlightTrackNr,int);
-		vtkGetMacro(calcHighlightTrackNr,int);
-		vtkSetMacro(calcHighlightSnapshotNr,int);
-		vtkGetMacro(calcHighlightSnapshotNr,int);
-		vtkSetMacro(calcHighlightPointNr,int);
-		vtkGetMacro(calcHighlightPointNr,int);
-
-
-	vtkSetMacro(DisplayEstimateTolerance,bool);
-	vtkGetMacro(DisplayEstimateTolerance,bool);
-	*/
-
-
 
 //BTX
 protected:
@@ -118,10 +75,29 @@ protected:
 	vtkSQLiteReader();
 	~vtkSQLiteReader();
 
+	virtual int FillOutputPortInformation(int vtkNotUsed(port),	vtkInformation* info);
+
 	int RequestInformation(vtkInformation*,	vtkInformationVector**,
 		vtkInformationVector*);
 	int RequestData(vtkInformation*,vtkInformationVector**,
 		vtkInformationVector*);
+
+	/* OUTDATED use vtkIdList instead
+	struct Track2{
+		int nPoints;
+		vtkstd::vector<vtkIdType> PointIds;
+	};
+
+	struct Snap2{
+		vtkstd::vector<vtkIdType> PointIds;
+	};
+
+	vtkstd::vector<Snap2> SnapInfo2;
+	vtkstd::vector<Track2> TrackInfo2;
+	*/
+	vtkstd::vector< vtkSmartPointer<vtkIdList> > SnapInfo2;
+	vtkstd::vector< vtkSmartPointer<vtkIdList> > TrackInfo2;
+
 
 	//structs
 	struct SnapshotInfo {
@@ -129,6 +105,8 @@ protected:
 		int lenght; // stores the amount of halos in this snapshot
 		std::vector<int> PointId; //allocates gid to new id (PointId.at(gid) = id+offset) maybee save here some mem, by using smaller datatype..
 		
+
+		// dont store data in structs anymore...
 		int snapshotNr; // snapshot Nr from simulation (this is not the id!)
 		double redshift;
 		double time;
@@ -144,22 +122,34 @@ protected:
 	};
 
 	struct DataInformation {
+		bool InitComplete;
 		bool dataIsRead;
 		int nPoints;
 		int nTracks;
 		int nSnapshots;
-		double hubble;
-		/*
-		int nSelectedPoints; //-1 means all, single points selected to display
-		int nSelectedTracks; // -1 means all
-		int nSelectedSnapshots; 
-		int nAllSelectedPoints; // # of all points (inkl tracks, snaps) to display
-		std::vector<int>	selectedPoints; // holds globalids from points to display
-		std::vector<int>	selectedSnapshots; //holds snapids of points from snapshot to display
-		std::vector<int>	selectedTracks; //holds trackid from points to display
-		std::vector<int>	idMap1; //mapps ids from read in data to displayed data
-		std::vector<int>	idMap2; //mapps ids from displayed data to read in data
-		*/
+		int gidmax;
+		double Omega0;
+		double OmegaLambda;
+		double Hubble;
+		
+		vtkstd::vector<int> SnapinfoDataColumns; // witch columns in db contain relevant data?
+		vtkstd::vector<int> StatDataColumns; // witch columns in db contain relevant data?
+		vtkstd::vector<int> StatCordinateColumns; // witch columns in db contain relevant data?
+		//vtkstd::vector<int> StatVelocityColumns; // NOT USED witch columns in db contain relevant data?
+
+		// these save witch column in the according table in db contains the vital ids
+		int SnapinfoSnapidColumn;
+		int StatSnapidColumn;
+		int StatGidColumn;
+		int TracksTrackidColumn;
+		int TracksSnapidColumn;
+		int TracksGidColumn;
+
+		// pointer to important dataarrays
+		vtkSmartPointer<vtkIdTypeArray> pGIdArray;
+		vtkSmartPointer<vtkIdTypeArray> pTrackIdArray;
+		vtkSmartPointer<vtkIdTypeArray> pSnapIdArray;
+		int dataArrayOffset;
 	};
 
 	struct GuiStruct {
@@ -193,6 +183,7 @@ protected:
 		*/
 	};
 
+	// very old, dont use this
 	struct Data {
 		vtkSmartPointer<vtkPoints>			Position;
 		vtkSmartPointer<vtkFloatArray>		Velocity;
@@ -226,6 +217,7 @@ protected:
 		std::vector<int>	selectedTracks; //stores trackid from points to display
 	};
 
+	/* old
 	struct CollisionResultStruct{
 		int nEvents;
 		int nPoints;
@@ -241,8 +233,19 @@ protected:
 		CollisionResultStruct Colliding;
 		CollisionResultStruct Merging;
 	};
+	*/
 
-	struct SelectionStruct{
+	struct CollisionCalculation{
+		bool CalcIsDone;
+		double CollisionTolerance;
+		double MergingTolerance;
+		vtkSmartPointer<vtkIdList> CollisionPointIds;
+		vtkSmartPointer<vtkIdList> CollisionTrackIds;
+		vtkSmartPointer<vtkIdList> MergingPointIds;
+		vtkSmartPointer<vtkIdList> MergingTrackIds;
+	};
+
+/*	struct SelectionStruct{
 		int nSelectedPoints;
 		int nSelectedTracks;
 		int nSelectedSnapshots;
@@ -253,6 +256,11 @@ protected:
 		std::vector<int> vPointIdMapReverse; // equal to vPointIds!!
 		std::vector<int> vTrackIdMap;
 
+	};*/
+
+	struct SelectionStruct {
+		vtkSmartPointer<vtkIdList>	Points;
+		vtkSmartPointer<vtkIdList>	Tracks;
 	};
 
 	struct ResultOfEsimationOfTolerance {
@@ -281,13 +289,14 @@ protected:
 	CalculationSettings calcInfo;
 	SelectionStruct	selection;
 	
-	CollisionCalculationStruct collisionCalc;
+	CollisionCalculation collisionCalc;
+	//CollisionCalculationStruct collisionCalc;
 
-	std::vector<ResultOfEsimationOfTolerance> calcEstTol;
-	vtkSmartPointer<vtkFloatArray> calcEstTol2;
+	//std::vector<ResultOfEsimationOfTolerance> calcEstTol;
+	//vtkSmartPointer<vtkFloatArray> calcEstTol2;
 	
-	std::vector<SnapshotInfo> SnapInfo;
-	std::vector<Track> TracksInfo;
+	//std::vector<SnapshotInfo> SnapInfo;
+	//std::vector<Track> TracksInfo;
 
 	//gui variables
 	char* FileName;
@@ -329,7 +338,13 @@ private:
 
 	//variables
 	sqlite3 * db;
-	bool dataIsRead;
+
+	vtkSmartPointer<vtkPolyData>	AllData;
+	vtkSmartPointer<vtkPolyData>	SelectedData;
+	vtkSmartPointer<vtkPolyData>	EmptyData;
+
+	vtkSmartPointer<vtkPolyData>	TrackData;
+	vtkSmartPointer<vtkPolyData>	SnapshotData;
 
 	//functions
 	int ReadHeader(); // reads the database header information
@@ -337,31 +352,71 @@ private:
 	int readSnapshots(); // reads the snapshots
 	int readSnapshotInfo(); 
 	int readTracks();
-	int calculateAdditionalData();
-	int generateColors();
+	int calculatePointData();
+	//int generateColors();
 
-	int findCollisions(CollisionCalculationStruct*);
+	int findCollisions(CollisionCalculation*);
+	
 	//int doCalculations(double,int);
 	int calcTolerance();
 
-	int generateSelection(CollisionCalculationStruct*, SelectionStruct*);
-	int fillIdList(std::vector<int>*, int*,
+
+	int generateSelection(
+		CollisionCalculation*, SelectionStruct*);
+	int generateSelectedData(
+		vtkSmartPointer<vtkPolyData>, SelectionStruct*);
+	
+	/*int fillIdList(std::vector<int>*, int*,
 		std::vector<int>*, int*,
 		CollisionResultStruct*, int);
 	int generateIdMap();
 	int generatePoints(SelectionStruct*, Data*);
 	int generateTracks(SelectionStruct*, Data*);
 	int reset();
+	*/
 
 	// helper
+	vtkSmartPointer<vtkIdList> IdListUnion (
+		vtkSmartPointer<vtkIdList>, vtkSmartPointer<vtkIdList>); 
+	vtkSmartPointer<vtkIdList> IdListUnionUnique (
+		vtkSmartPointer<vtkIdList>, vtkSmartPointer<vtkIdList>); 
+	vtkSmartPointer<vtkIdList> IdListIntersect (
+		vtkSmartPointer<vtkIdList>, vtkSmartPointer<vtkIdList>); 
+	vtkSmartPointer<vtkIdList> IdListComplement (
+		vtkSmartPointer<vtkIdList>, vtkSmartPointer<vtkIdList>); 
+
+	int IdTypeArray2IdList(vtkIdList* destination, vtkIdTypeArray* source);
+
 	int openDB(char*);
 	vtkStdString Int2Str(int);
 	double getDistance2(int, int);
-	double getDistanceToO(int);
+	//double getDistanceToO(int);
 
-	// old stuff - not yet, or not anymore needed
-	int RequestDataDemo(vtkInformationVector*);
-	int SQLQuery(vtkStdString, sqlite3_stmt*);
+	vtkSmartPointer<vtkFloatArray> CreateArray(
+		vtkDataSet *output, const char* arrayName, int numComponents=1);
+	vtkSmartPointer<vtkIntArray> CreateIntArray(
+		vtkDataSet *output, const char* arrayName, int numComponents=1);
+	vtkSmartPointer<vtkIdTypeArray> CreateIdTypeArray(
+		vtkDataSet *output, const char* arrayName, int numComponents=1);
+
+	int InitAllArrays(vtkDataSet *output, unsigned long numTuples);
+
+	struct timings{
+		double tot;
+		double main;
+		double init;
+		double read;
+		double calc;
+		double refresh;
+		double generateSelect;
+		double executeSelect;
+	} timing;
+
+	struct initData{
+		int nPoints;
+		int nTracks;
+		int nSnapshots;
+	} initData;
 
 
 //ETX
