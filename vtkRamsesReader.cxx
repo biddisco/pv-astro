@@ -458,6 +458,7 @@ int vtkRamsesReader::RequestData(vtkInformation*,
         double data;
         // particle id
         pdataint.get_var("particle_ID");
+        ids.reserve(pdataint.size(i));
         for(unsigned ip=0; ip < pdataint.size(i); ++ip)
         {
           int dataint = pdataint(i,ip);
@@ -465,6 +466,7 @@ int vtkRamsesReader::RequestData(vtkInformation*,
         }
         // pos x
         pdata.get_var("position_x");
+        x.reserve(pdata.size(i));
         for(unsigned ip=0; ip < pdata.size(i); ++ip)
         {
           data = pdata(i,ip);          
@@ -473,6 +475,7 @@ int vtkRamsesReader::RequestData(vtkInformation*,
         
         // pos y
         pdata.get_var("position_y");
+        y.reserve(pdata.size(i));
         for(unsigned ip=0; ip < pdata.size(i); ++ip)
         {
           data = pdata(i,ip);
@@ -481,6 +484,7 @@ int vtkRamsesReader::RequestData(vtkInformation*,
         
         //pos z
         pdata.get_var("position_z");
+        z.reserve(pdata.size(i));
         for(unsigned ip=0; ip < pdata.size(i); ++ip)
         {
           data = pdata(i,ip); 
@@ -490,6 +494,7 @@ int vtkRamsesReader::RequestData(vtkInformation*,
 
         //velocity x
         pdata.get_var("velocity_x");
+        vx.reserve(pdata.size(i));
         for(unsigned ip=0; ip < pdata.size(i); ++ip)
         {
           data = pdata(i,ip); 
@@ -499,6 +504,7 @@ int vtkRamsesReader::RequestData(vtkInformation*,
         
         //velocity y
         pdata.get_var("velocity_y");
+        vy.reserve(pdata.size(i));
         for(unsigned ip=0; ip < pdata.size(i); ++ip)
         {
           data = pdata(i,ip); 
@@ -507,6 +513,7 @@ int vtkRamsesReader::RequestData(vtkInformation*,
 
         //velocity z
         pdata.get_var("velocity_z");
+        vz.reserve(pdata.size(i));
         for(unsigned ip=0; ip < pdata.size(i); ++ip)
         {
           data = pdata(i,ip); 
@@ -515,6 +522,7 @@ int vtkRamsesReader::RequestData(vtkInformation*,
 
         //pos z
         pdata.get_var("mass");
+        mass.reserve(pdata.size(i));
         for(unsigned ip=0; ip < pdata.size(i); ++ip)
         {
           data = pdata(i,ip); 
@@ -523,12 +531,14 @@ int vtkRamsesReader::RequestData(vtkInformation*,
         
         if(!dark_only) {
           pdata.get_var("age");
+          age.reserve(pdata.size(i));
           for(unsigned ip=0; ip < pdata.size(i); ++ip)
           {
             data = pdata(i,ip); 
             age.push_back(data);
           }
           pdata.get_var("metallicity");
+          metals.reserve(pdata.size(i));
           for(unsigned ip=0; ip < pdata.size(i); ++ip)
           {
             data = pdata(i,ip); 
@@ -542,7 +552,8 @@ int vtkRamsesReader::RequestData(vtkInformation*,
 
     vtkDebugMacro("finished reading and x is of size " << x.size() );
 
-		// computing minimum_darkparticle_mass and separating dark, star (later gas)
+    type.reserve(x.size());
+    // computing minimum_darkparticle_mass and separating dark, star (later gas)
     min_darkparticle_mass=DBL_MAX;
 		for(unsigned i=0;i< x.size();i++) {
 			// IDs > 0: star or dark
