@@ -1,3 +1,5 @@
+PROJECT("pv-astro")
+
 cmake_minimum_required(VERSION 2.8)
 if(COMMAND cmake_policy)
       cmake_policy(SET CMP0003 OLD)
@@ -7,7 +9,7 @@ FIND_PACKAGE(ParaView REQUIRED)
 INCLUDE(${PARAVIEW_USE_FILE})
 
 ###############
-# AstroViz plugin
+# pv_astro plugin
 # INCLUDES
 #   o Tipsy binary reader
 #   o Ramses binary reader
@@ -45,13 +47,13 @@ ADD_PARAVIEW_OBJECT_PANEL(
 
 
 
-#Defines the AstroViz plugin
+#Defines the pv_astro plugin
 IF (NOT WIN32)
 	SET(GRAPHIC_SRCS
 		vtkGraficReader.cxx		
 	)
 ENDIF (NOT WIN32)
-ADD_PARAVIEW_PLUGIN(AstroVizPlugin "1.1"
+ADD_PARAVIEW_PLUGIN(pv_astro "1.1"
 	SERVER_MANAGER_SOURCES 
 		vtkTipsyReader.cxx
 		vtkNSmoothFilter.cxx
@@ -116,7 +118,7 @@ ADD_LIBRARY(AstroVizHelpers STATIC AstroVizHelpersLib/AstroVizHelpers.cxx)
 
 SET_TARGET_PROPERTIES(AstroVizHelpers PROPERTIES COMPILE_FLAGS "-fPIC")
 TARGET_LINK_LIBRARIES(AstroVizHelpers vtkParallel)
-TARGET_LINK_LIBRARIES(AstroVizPlugin AstroVizHelpers ) 
+TARGET_LINK_LIBRARIES(pv_astro AstroVizHelpers ) 
 
 # For the Tipsy reader plugin I use some of Doug Potter's Tipsy lib.
 ADD_LIBRARY(
@@ -161,14 +163,14 @@ ENDIF (NOT WIN32)
 
 TARGET_LINK_LIBRARIES(AstroVizPlugin fio)
 TARGET_LINK_LIBRARIES(
-	AstroVizPlugin
- 	TipsyHelpers
+	pv_astro
+	TipsyHelpers
 	SQLitelib
 	)
-#TARGET_LINK_LIBRARIES(AstroVizPlugin #/Users/corbett/Documents/Projects/pvaddons/ParaViz/ParaViz_src/fio/libFio.so)
+#TARGET_LINK_LIBRARIES(pv_astro #/Users/corbett/Documents/Projects/pvaddons/ParaViz/ParaViz_src/fio/libFio.so)
 
 IF (NOT WIN32)
-	TARGET_LINK_LIBRARIES(AstroVizPlugin
+	TARGET_LINK_LIBRARIES(pv_astro
 		fio
 	)
 ENDIF (NOT WIN32)
