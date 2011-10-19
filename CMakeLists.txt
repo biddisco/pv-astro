@@ -36,16 +36,18 @@ INCLUDE_DIRECTORIES(AstroVizHelpersLib)
 INCLUDE_DIRECTORIES(fio)
 
 # for special gui
-QT4_WRAP_CPP(MOC_SRCS pqTrackFilterPanel.h)
+IF(PARAVIEW_BUILD_QT_GUI)
+  QT4_WRAP_CPP(MOC_SRCS pqTrackFilterPanel.h)
 
-ADD_PARAVIEW_OBJECT_PANEL(
-       IFACES IFACE_SRCS
-       CLASS_NAME pqTrackFilterPanel
-       XML_NAME TrackFilter
-       XML_GROUP filters
-       )
+  ADD_PARAVIEW_OBJECT_PANEL(
+	IFACES IFACE_SRCS
+	CLASS_NAME pqTrackFilterPanel
+	XML_NAME TrackFilter
+	XML_GROUP filters
+	)
+  SET(PV_ASTRO_GUI_FILES pqTrackFilterPanel.cxx)
 
-
+ENDIF(PARAVIEW_BUILD_QT_GUI)
 
 #Defines the pv_astro plugin
 IF (NOT WIN32)
@@ -96,7 +98,7 @@ ADD_PARAVIEW_PLUGIN(pv_astro "1.1"
 		AstroVizFilterMenu.xml
 		
 	GUI_INTERFACES ${IFACES} 
-    	SOURCES pqTrackFilterPanel.cxx ${MOC_SRCS} ${IFACE_SRCS}
+		SOURCES ${PV_ASTRO_GUI_FILES} ${MOC_SRCS} ${IFACE_SRCS}
 	)
 #PARAVIEW_INCLUDE_WRAPPED_SOURCES(fio/fio.c fio/romberg.c)
 #Defines the StrangeAttractors plugin
@@ -158,19 +160,12 @@ IF (NOT WIN32)
 	)
 	SET_TARGET_PROPERTIES(fio PROPERTIES LINKER_LANGUAGE C)
 	SET_TARGET_PROPERTIES(fio PROPERTIES COMPILE_FLAGS "-fPIC")
+        TARGET_LINK_LIBRARIES(pv_astro fio)
 ENDIF (NOT WIN32)
 
 
-TARGET_LINK_LIBRARIES(AstroVizPlugin fio)
 TARGET_LINK_LIBRARIES(
 	pv_astro
 	TipsyHelpers
 	SQLitelib
 	)
-#TARGET_LINK_LIBRARIES(pv_astro #/Users/corbett/Documents/Projects/pvaddons/ParaViz/ParaViz_src/fio/libFio.so)
-
-IF (NOT WIN32)
-	TARGET_LINK_LIBRARIES(pv_astro
-		fio
-	)
-ENDIF (NOT WIN32)
