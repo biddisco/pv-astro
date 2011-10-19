@@ -22,7 +22,8 @@
 
 #include "vtkSmartPointer.h"
 #include "tipsylib/ftipsy.hpp" // functions take Ramses particle objects
-#include <vtkstd/vector>
+#include <vtkstd/vector>       // std
+#include <vtkstd/string>       // std
 
 class vtkPolyData;
 class vtkCharArray;
@@ -31,7 +32,21 @@ class vtkDoubleArray;
 class vtkPoints;
 class vtkCellArray;
 class vtkDataArraySelection;
-class   vtkMultiProcessController;
+class vtkMultiProcessController;
+
+// use this command to generate a time series info file.
+// Must be done from the ramses output dir where all the time series dirs are
+//
+// find . -name \*.txt  > info_series.ramses
+//
+// it should generate something like this ...
+//
+// ./output_00001/info_00001.txt
+// ./output_00002/info_00002.txt
+// ...
+// ./output_00010/info_00010.txt
+//
+
 class VTK_EXPORT vtkRamsesReader : public vtkPolyDataAlgorithm
 {
 public:
@@ -120,6 +135,15 @@ protected:
 
   // To allow paraview gui to enable/disable scalar reading
   vtkDataArraySelection* PointDataArraySelection;
+
+  // used for getting time steps/files
+  vtkstd::vector<vtkstd::string> Filenames;
+  vtkstd::vector<double>    TimeStepValues;
+  int                       NumberOfTimeSteps;
+  int                       TimeStep;
+  int                       ActualTimeStep;
+  double                    TimeStepTolerance;
+  int                       TimeOutOfRange;
 
 private:
   vtkRamsesReader(const vtkRamsesReader&);  // Not implemented.
