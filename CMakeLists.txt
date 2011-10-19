@@ -36,18 +36,18 @@ INCLUDE_DIRECTORIES(AstroVizHelpersLib)
 INCLUDE_DIRECTORIES(fio)
 
 # for special gui
-#IF(PARAVIEW_BUILD_QT_GUI)
-#  QT4_WRAP_CPP(MOC_SRCS pqTrackFilterPanel.h)
+IF(PARAVIEW_BUILD_QT_GUI)
+  QT4_WRAP_CPP(MOC_SRCS pqTrackFilterPanel.h)
 
-#  ADD_PARAVIEW_OBJECT_PANEL(
-#	IFACES IFACE_SRCS
-#	CLASS_NAME pqTrackFilterPanel
-#	XML_NAME TrackFilter
-#	XML_GROUP filters
-#	)
-#  SET(PV_ASTRO_GUI_FILES pqTrackFilterPanel.cxx)
+  ADD_PARAVIEW_OBJECT_PANEL(
+	IFACES IFACE_SRCS
+	CLASS_NAME pqTrackFilterPanel
+	XML_NAME TrackFilter
+	XML_GROUP filters
+	)
+  SET(PV_ASTRO_GUI_FILES pqTrackFilterPanel.cxx)
 
-#ENDIF(PARAVIEW_BUILD_QT_GUI)
+ENDIF(PARAVIEW_BUILD_QT_GUI)
 
 #Defines the pv_astro plugin
 IF (NOT WIN32)
@@ -103,16 +103,16 @@ ADD_PARAVIEW_PLUGIN(pv_astro "1.1"
 #PARAVIEW_INCLUDE_WRAPPED_SOURCES(fio/fio.c fio/romberg.c)
 #Defines the StrangeAttractors plugin
 
-#ADD_PARAVIEW_PLUGIN(StrangeAttractorsPlugin "1.0"
-#	SERVER_MANAGER_SOURCES 
-#		vtkStrangeAttractors.cxx
-#	SERVER_MANAGER_XML
-#		StrangeAttractorsSM.xml
-#	GUI_RESOURCES
-#		StrangeAttractors.qrc 
-#	GUI_INTERFACES ${IFACES} 
-#	SOURCES ${MOC_SRCS} ${IFACE_SRCS}
-#	)
+ADD_PARAVIEW_PLUGIN(StrangeAttractorsPlugin "1.0"
+	SERVER_MANAGER_SOURCES 
+		vtkStrangeAttractors.cxx
+	SERVER_MANAGER_XML
+		StrangeAttractorsSM.xml
+	GUI_RESOURCES
+		StrangeAttractors.qrc 
+	GUI_INTERFACES 
+	SOURCES 
+	)
 	
 # For helper functions often used, will later include these in a single
 # VTK class.
