@@ -3,7 +3,6 @@
     <SourceProxy name="RamsesReader"
 					 class="vtkRamsesReader">
 
-
       <StringVectorProperty
         name="AaaFileName"
         command="SetFileName"
@@ -13,6 +12,12 @@
           Reads in points from a Ramses binary file.
         </Documentation>
       </StringVectorProperty>
+
+      <DoubleVectorProperty
+        name="TimestepValues"
+        information_only="1">
+        <TimeStepsInformationHelper/>
+      </DoubleVectorProperty>
 
       <StringVectorProperty
          name="PointArrayInfo"
@@ -39,31 +44,32 @@
         </Documentation>
       </StringVectorProperty>
 
-	  <DoubleVectorProperty
-			name="ParticleMassGuess"
-			command="SetParticleMassGuess"
-			number_of_elements="1"
-			default_values="0">
-			
-			<Documentation>
-			If this run includes hydro, it is necessary to have a guess at the gas particle mass. If this is a cosmo run, a decent guess for the guess particle mass can be automatically determined from the total mass, the minimum dark matter particle mass, and omegab/(omegam-omegab). If another guess is desired (required in the case of a non-cosmo run) please specify a non-zero positive value here.
-
-			</Documentation>
-	  </DoubleVectorProperty>
-	
-	
-	  <IntVectorProperty name="HasParticleData"
-        command="SetHasParticleData"
+      <DoubleVectorProperty
+        name="ParticleMassGuess"
+        command="SetParticleMassGuess"
         number_of_elements="1"
-        default_values="1">
+        default_values="300000000">
+
+        <Documentation>
+          If this run includes hydro, it is necessary to have a guess at the gas particle mass.
+          If this is a cosmo run, a decent guess for the guess particle mass can be automatically
+          determined from the total mass, the minimum dark matter particle mass,
+          and omegab/(omegam-omegab).
+          If another guess is desired (required in the case of a non-cosmo run)
+          please specify a non-zero positive value here.
+
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <IntVectorProperty name="HasParticleData"
+          command="SetHasParticleData"
+          number_of_elements="1"
+          default_values="1">
         <BooleanDomain name="bool" />
         <Documentation>
-		If the file you are reading has no particle data, uncheck this option otherwise a crash will occur        
-		</Documentation>
+          If the file you are reading has no particle data, uncheck this option otherwise a crash will occur
+        </Documentation>
       </IntVectorProperty>
-	
-
-
 
     </SourceProxy>
   </ProxyGroup>
