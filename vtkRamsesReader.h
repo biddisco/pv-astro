@@ -54,6 +54,11 @@ public:
   // Set/Get the optional particle mass guess 
 	vtkSetMacro(HasParticleData,bool);
  	vtkGetMacro(HasParticleData,bool);
+  
+  // Description:
+  // Set/Get whether we should convert units
+	vtkSetMacro(ConvertUnits,bool);
+ 	vtkGetMacro(ConvertUnits,bool);
 	
 	// Description:
   // An H5Part file may contain multiple arrays
@@ -88,6 +93,7 @@ protected:
 	char* FileName;
 	double ParticleMassGuess;
 	bool HasParticleData;
+  bool ConvertUnits;
 	int RequestInformation(vtkInformation*,	vtkInformationVector**,
 		vtkInformationVector*);
 

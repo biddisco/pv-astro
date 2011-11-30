@@ -53,7 +53,19 @@ typedef RAMSES::PART::multi_domain_data< RAMSES_tree, double > multi_part;
 typedef RAMSES::PART::multi_domain_data< RAMSES_tree, int > multi_part_int; 
 
 
+// CGS units needed // TODO: put these in a header file
+float kpcInCm=3.08568025*pow(10,21);
+float pcInCm=3.08568025* pow(10,18);
+float kmInCm=pow(10,5);
+float GyrInS=3.1536*pow(10,16);
+float yrInS=3.1553*pow(10,7);
+float msolInG=1.98892*pow(10,33);
 
+// if convert units is set to true we
+// * Converting coordinates from simulation units to kpc
+// * Converting velocities from simulation units to km/s
+// * Converting masses from simulation units to Msol
+// * Converting ages to Gyr (useful for average stellar ages)
 //----------------------------------------------------------------------------
 double dRandInRange(double min, double max) {
 	double d = (double)rand()/RAND_MAX;
@@ -111,6 +123,7 @@ vtkRamsesReader::vtkRamsesReader()
   this->Tform       = NULL;
   this->Velocity    = NULL;
   this->Controller = NULL;
+  this->ConvertUnits = false; 
   this->Controller=vtkMultiProcessController::GetGlobalController();
   
 }
@@ -431,6 +444,13 @@ int vtkRamsesReader::RequestData(vtkInformation*,
   
   //... read tree structure for multiple domains; need this for particle and AMR
   multi_tree trees(rsnap, mydomains);
+  float posConversionFactor = rsnap.m_header.boxlen*rsnap.m_header.unit_l/kpcInCm;
+  float velConversionFactor = rsnap.m_header.unit_l/rsnap.m_header.unit_t/kmInCm;
+  float massConversionFactor = pow(rsnap.m_header.unit_l,3)*rsnap.m_header.unit_d/msolInG;
+  float ageConversionFactor = -1*rsnap.m_header.unit_t/GyrInS;
+  vtkErrorMacro("conversion factors pos,vel,mass,age="<<posConversionFactor << ","<<velConversionFactor <<"," << massConversionFactor  <<"," << ageConversionFactor);
+
+  
 	// Reading in Particle Data if available 
 	if(this->HasParticleData) {
 		dark_only=true;
@@ -452,7 +472,6 @@ int vtkRamsesReader::RequestData(vtkInformation*,
     // reading particles!
     multi_part pdata( rsnap, *trees );    
     multi_part_int pdataint( rsnap, *trees );    
-
     for(unsigned i=0; i<mydomains.size(); ++i) 
       {
         double data;
@@ -467,7 +486,10 @@ int vtkRamsesReader::RequestData(vtkInformation*,
         pdata.get_var("position_x");
         for(unsigned ip=0; ip < pdata.size(i); ++ip)
         {
-          data = pdata(i,ip);          
+          data = pdata(i,ip);
+          if(this->ConvertUnits) {
+            data*=posConversionFactor;
+          }
           x.push_back(data);
         }
         
@@ -476,6 +498,9 @@ int vtkRamsesReader::RequestData(vtkInformation*,
         for(unsigned ip=0; ip < pdata.size(i); ++ip)
         {
           data = pdata(i,ip);
+          if(this->ConvertUnits) {
+            data*=posConversionFactor;
+          }
           y.push_back(data);
         }
         
@@ -484,6 +509,9 @@ int vtkRamsesReader::RequestData(vtkInformation*,
         for(unsigned ip=0; ip < pdata.size(i); ++ip)
         {
           data = pdata(i,ip); 
+          if(this->ConvertUnits) {
+            data*=posConversionFactor;
+          }
           z.push_back(data);
         }
         
@@ -493,6 +521,9 @@ int vtkRamsesReader::RequestData(vtkInformation*,
         for(unsigned ip=0; ip < pdata.size(i); ++ip)
         {
           data = pdata(i,ip); 
+          if(this->ConvertUnits) {
+            data*=velConversionFactor;
+          }
           vx.push_back(data);
         }
 
@@ -502,6 +533,9 @@ int vtkRamsesReader::RequestData(vtkInformation*,
         for(unsigned ip=0; ip < pdata.size(i); ++ip)
         {
           data = pdata(i,ip); 
+          if(this->ConvertUnits) {
+            data*=velConversionFactor;
+          }
           vy.push_back(data);
         }
 
@@ -510,6 +544,9 @@ int vtkRamsesReader::RequestData(vtkInformation*,
         for(unsigned ip=0; ip < pdata.size(i); ++ip)
         {
           data = pdata(i,ip); 
+          if(this->ConvertUnits) {
+            data*=velConversionFactor;
+          }
           vz.push_back(data);
         }
 
@@ -518,6 +555,9 @@ int vtkRamsesReader::RequestData(vtkInformation*,
         for(unsigned ip=0; ip < pdata.size(i); ++ip)
         {
           data = pdata(i,ip); 
+          if(this->ConvertUnits) {
+            data*=massConversionFactor;
+          }          
           mass.push_back(data);
         }
         
@@ -526,6 +566,9 @@ int vtkRamsesReader::RequestData(vtkInformation*,
           for(unsigned ip=0; ip < pdata.size(i); ++ip)
           {
             data = pdata(i,ip); 
+            if(this->ConvertUnits) {
+              data*=ageConversionFactor;
+            }
             age.push_back(data);
           }
           pdata.get_var("metallicity");
@@ -540,7 +583,7 @@ int vtkRamsesReader::RequestData(vtkInformation*,
       
       }
 
-    vtkDebugMacro("finished reading and x is of size " << x.size() );
+    vtkErrorMacro("finished reading and x is of size " << x.size() );
 
 		// computing minimum_darkparticle_mass and separating dark, star (later gas)
     min_darkparticle_mass=DBL_MAX;
@@ -567,10 +610,10 @@ int vtkRamsesReader::RequestData(vtkInformation*,
       this->Controller->AllReduce(min_darkparticle_mass_local, min_darkparticle_mass_global, 1, vtkCommunicator::MIN_OP);
       min_darkparticle_mass=min_darkparticle_mass_global[0];
     }
-    vtkDebugMacro("minimum darkparticle mass is"<< min_darkparticle_mass)
+    vtkErrorMacro("minimum darkparticle mass is"<< min_darkparticle_mass)
 	}	
-
 	// GAS PARTICLE CONVERSION
+  // TODO: fix to do unit conversion
 	// Here's where we want to extract gas particles. Perhaps take in a flag whether we should bother here, or not.
 	double gas_mass_correction = 0.0;
   // TODOCRIT: add this *back* in when we are ready with MPI
@@ -621,12 +664,24 @@ int vtkRamsesReader::RequestData(vtkInformation*,
                 //.. obey periodic boundary conditions of box
                 rho = data(i, grid_it, k );
                 dx = pow(0.5,ilevel); 
+                // adding to total volume and mass, the end goal of this
+								dx3=pow(dx,3);
 								// It's a leaf
+                
+                // Convert if necessary
+                if(this->ConvertUnits) {
+                  dx*=posConversionFactor;
+                  dx3*=pow(posConversionFactor,3);
+                  rho*=massConversionFactor/pow(posConversionFactor,3);
+                  pos.x *= posConversionFactor;
+                  pos.y *= posConversionFactor;
+                  pos.z *= posConversionFactor;
+          
+                }          
+
 								leaf_cell_pos.push_back(pos);
 								leaf_cell_density.push_back(rho);
 								leaf_cell_size.push_back(dx);
-								// adding to total volume and mass, the end goal of this
-								dx3=pow(dx,3);
 								total_volume += dx3;
 								total_mass += rho*dx3;
                 
@@ -639,7 +694,8 @@ int vtkRamsesReader::RequestData(vtkInformation*,
       }
     }
     
-    vtkErrorMacro("Finally summing the total_mass and total_volume accross all processors if necessary");
+
+    vtkErrorMacro("Finally summing the total_mass and total_volume accross all processors if necessary: ");
 
     // Finally summing the total_mass and total_volume accross all processors if necessary
 		if(this->Controller!=NULL) {
@@ -671,15 +727,20 @@ int vtkRamsesReader::RequestData(vtkInformation*,
 		//   particle_number_guess=int(partmass/mdm)+1
 		double average_density = total_mass/total_volume;
 
-		
-		double particle_mass = this->ParticleMassGuess;
-		if(particle_mass==0) {
+		double particle_mass = this->ParticleMassGuess;		
+    if(particle_mass==0) {
       vtkErrorMacro("getting information out of the header about the conversion factor and the particle mass");
       // TODO: here we should check if these exist at all in the header
 			double conversion_factor = rsnap.m_header.omega_b / (rsnap.m_header.omega_m-rsnap.m_header.omega_b);
 			unsigned particle_number_guess = floor(total_mass/(min_darkparticle_mass*conversion_factor))+1;
 			particle_mass = total_mass/particle_number_guess;// ndm=mdm*omegab/(omegam-omegab), valid for cosmorun, otherwise m_sph, otherwise request from user
 		}
+    
+    
+    vtkErrorMacro("gas particle mass="<<particle_mass);
+    
+    
+
 		double mass_leftover = 0.0;
 		
 		unsigned number_local_particles = 0;
@@ -687,29 +748,31 @@ int vtkRamsesReader::RequestData(vtkInformation*,
 		
     // TODO: here the gas_id will not be consistent across processors
 		int gas_id=x.size();
-		for(unsigned leaf_idx = 0; leaf_idx < leaf_cell_pos.size(); leaf_idx++) {			
+		for(unsigned leaf_idx = 0; leaf_idx < leaf_cell_pos.size(); leaf_idx++) {		
 			rho=leaf_cell_density[leaf_idx]/CORRECTIONFACTOR;
 			dx=leaf_cell_size[leaf_idx];
 			RAMSES::AMR::vec<double> pos=leaf_cell_pos[leaf_idx];
 			
-			dx3=pow(dx,3);
+
 			number_local_particles = floor(rho * dx3/particle_mass); 
 			
 			// updating stats for taking care of leftovers
 			total_particles+=number_local_particles;
 			mass_leftover += (rho*dx3-number_local_particles * particle_mass);
 			
-			
 			// Here we want to distribute number_local_particles over dx*3 of space
 			double g_x,g_y,g_z=0;
+      
 			for(unsigned i=0; i < number_local_particles; i++) {
 				gas_id+=1;				
 				g_x=dRandInRange(pos.x-dx,pos.x+dx);
 				g_y=dRandInRange(pos.y-dx,pos.y+dx);
 				g_z=dRandInRange(pos.z-dx,pos.z+dx);
+
 				x.push_back(g_x);
 				y.push_back(g_y);
 				z.push_back(g_z);
+        // TODO if I compute these I'll have to convert
 				vx.push_back(0.0);
 				vy.push_back(0.0);
 				vz.push_back(0.0);
@@ -738,11 +801,12 @@ int vtkRamsesReader::RequestData(vtkInformation*,
     }
     
     
-    vtkErrorMacro("finally we want to distribute leftover_particles = floor(mass_leftover/particle_mass) over entire volume. Have only processor zero do this, for now");
 		
 		// finally we want to distribute leftover_particles = floor(mass_leftover/particle_mass) over entire volume. Have only processor zero do this, for now
 		unsigned leftover_particles =floor(mass_leftover/particle_mass);
     unsigned leftover_particles_thisproc = leftover_particles;
+    vtkErrorMacro("finally we want to distribute leftover_particles = floor(mass_leftover/particle_mass) over entire volume. Have only processor zero do this, for now" << leftover_particles_thisproc);
+
 		double g_x,g_y,g_z=0;
 		if(this->Controller!=NULL) {
       int size=this->Controller->GetNumberOfProcesses();
@@ -753,15 +817,20 @@ int vtkRamsesReader::RequestData(vtkInformation*,
         leftover_particles_thisproc+=(leftover_particles-leftover_particles_thisproc*size);
       }      
     }    
-    
+    // conversion 2/2. 
+    float range =1;
+    if(this->ConvertUnits) {
+      range = posConversionFactor;
+    }
     for(unsigned i=0; i < leftover_particles_thisproc; i++) {
 			gas_id+=1;
-			g_x=dRandInRange(0,1);
-			g_y=dRandInRange(0,1);
-			g_z=dRandInRange(0,1);
+			g_x=dRandInRange(0,range);
+			g_y=dRandInRange(0,range);
+			g_z=dRandInRange(0,range);
 			x.push_back(g_x);
 			y.push_back(g_y);
 			z.push_back(g_z);
+      // TODO if convert units I'll have to convert this when I care about it
 			vx.push_back(0.0); 
 			vy.push_back(0.0);
 			vz.push_back(0.0);
