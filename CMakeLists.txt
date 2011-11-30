@@ -1,3 +1,5 @@
+PROJECT("pv-astro")
+
 cmake_minimum_required(VERSION 2.8)
 if(COMMAND cmake_policy)
       cmake_policy(SET CMP0003 OLD)
@@ -7,12 +9,11 @@ FIND_PACKAGE(ParaView REQUIRED)
 INCLUDE(${PARAVIEW_USE_FILE})
 
 ###############
-# AstroViz plugin
+# pv_astro plugin
 # INCLUDES
 #   o Tipsy binary reader
 #   o Ramses binary reader
 #   o Grafic binary reader
-#   o Gadget binary reader 
 #   o color bars equivalent to those available in tipsy
 #   o smoothing filter (recommended to use pv-meshless SPH Smooth utility)
 #   o center of mass filter 
@@ -35,19 +36,26 @@ INCLUDE_DIRECTORIES(AstroVizHelpersLib)
 INCLUDE_DIRECTORIES(fio)
 
 # for special gui
-QT4_WRAP_CPP(MOC_SRCS pqTrackFilterPanel.h)
+IF(PARAVIEW_BUILD_QT_GUI)
+  QT4_WRAP_CPP(MOC_SRCS pqTrackFilterPanel.h)
 
-ADD_PARAVIEW_OBJECT_PANEL(
-       IFACES IFACE_SRCS
-       CLASS_NAME pqTrackFilterPanel
-       XML_NAME TrackFilter
-       XML_GROUP filters
-       )
+  ADD_PARAVIEW_OBJECT_PANEL(
+	IFACES IFACE_SRCS
+	CLASS_NAME pqTrackFilterPanel
+	XML_NAME TrackFilter
+	XML_GROUP filters
+	)
+  SET(PV_ASTRO_GUI_FILES pqTrackFilterPanel.cxx)
 
+ENDIF(PARAVIEW_BUILD_QT_GUI)
 
-
-#Defines the AstroViz plugin
-ADD_PARAVIEW_PLUGIN(AstroVizPlugin "1.1"
+#Defines the pv_astro plugin
+IF (NOT WIN32)
+	SET(GRAPHIC_SRCS
+		vtkGraficReader.cxx		
+	)
+ENDIF (NOT WIN32)
+ADD_PARAVIEW_PLUGIN(pv_astro "1.1"
 	SERVER_MANAGER_SOURCES 
 		vtkTipsyReader.cxx
 		vtkNSmoothFilter.cxx
@@ -78,19 +86,19 @@ ADD_PARAVIEW_PLUGIN(AstroVizPlugin "1.1"
         TrackFilterSM.xml
         SimpleBinSM.xml
 		RamsesReaderSM.xml
-		GadgetReaderSM.xml
+		#GadgetReaderSM.xml
 
 	GUI_RESOURCES
 		TipsyReader.qrc
         SQLiteReader.qrc
 		RamsesReader.qrc
-		GadgetReader.qrc
+		#GadgetReader.qrc
 		GraficReader.qrc		
 	GUI_RESOURCE_FILES
 		AstroVizFilterMenu.xml
 		
 	GUI_INTERFACES ${IFACES} 
-    	SOURCES pqTrackFilterPanel.cxx ${MOC_SRCS} ${IFACE_SRCS}
+		SOURCES ${PV_ASTRO_GUI_FILES} ${MOC_SRCS} ${IFACE_SRCS}
 	)
 #PARAVIEW_INCLUDE_WRAPPED_SOURCES(fio/fio.c fio/romberg.c)
 #Defines the StrangeAttractors plugin
@@ -111,7 +119,8 @@ ADD_PARAVIEW_PLUGIN(AstroVizPlugin "1.1"
 ADD_LIBRARY(AstroVizHelpers AstroVizHelpersLib/AstroVizHelpers.cxx)
 
 SET_TARGET_PROPERTIES(AstroVizHelpers PROPERTIES COMPILE_FLAGS "-fPIC")
-TARGET_LINK_LIBRARIES(AstroVizPlugin AstroVizHelpers ) 
+TARGET_LINK_LIBRARIES(AstroVizHelpers vtkParallel)
+TARGET_LINK_LIBRARIES(pv_astro AstroVizHelpers ) 
 
 # For the Tipsy reader plugin I use some of Doug Potter's Tipsy lib.
 ADD_LIBRARY(
@@ -142,6 +151,7 @@ ADD_LIBRARY(
 #For the Grafic reader plugin (and later) integrated tipsy HDF, tipsy binary, and grafic reader I use some of Doug Potter's/Joachim Stadel's fio
 # For the Tipsy reader plugin I use some of Doug Potter's Tipsy lib.
 # TODO: this is not working, hardcoding library path for now
+<<<<<<< HEAD
 ADD_LIBRARY(
 	fio
 	STATIC
@@ -151,14 +161,34 @@ ADD_LIBRARY(
 SET_TARGET_PROPERTIES(fio PROPERTIES LINKER_LANGUAGE C)
 SET_TARGET_PROPERTIES(fio PROPERTIES COMPILE_FLAGS " -fPIC")
 
+=======
+IF (NOT WIN32)
+	ADD_LIBRARY(
+		fio
+		STATIC
+		fio/fio.c
+		fio/romberg.c
+	)
+	SET_TARGET_PROPERTIES(fio PROPERTIES LINKER_LANGUAGE C)
+	SET_TARGET_PROPERTIES(fio PROPERTIES COMPILE_FLAGS "-fPIC")
+        TARGET_LINK_LIBRARIES(pv_astro fio)
+ENDIF (NOT WIN32)
+>>>>>>> bcf2e056fd5f804658800868595cef98c041c23e
 
 
-TARGET_LINK_LIBRARIES(AstroVizPlugin fio)
 TARGET_LINK_LIBRARIES(
+<<<<<<< HEAD
 	AstroVizPlugin
 	fio
  	TipsyHelpers
+=======
+	pv_astro
+	TipsyHelpers
+>>>>>>> bcf2e056fd5f804658800868595cef98c041c23e
 	SQLitelib
 	#gmp
 	)
+<<<<<<< HEAD
 #TARGET_LINK_LIBRARIES(AstroVizPlugin #/Users/corbett/Documents/Projects/pvaddons/ParaViz/ParaViz_src/fio/libFio.so)
+=======
+>>>>>>> bcf2e056fd5f804658800868595cef98c041c23e

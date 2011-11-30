@@ -36,6 +36,9 @@
 #include "RAMSES_amr_data.hh"
 #include "RAMSES_hydro_data.hh"
 #include "RAMSES_mpi.hh"
+
+#include <vtksys/SystemTools.hxx>
+
 vtkCxxRevisionMacro(vtkRamsesReader, "$Revision: 1.0 $");
 vtkStandardNewMacro(vtkRamsesReader);
 
@@ -126,6 +129,8 @@ vtkRamsesReader::vtkRamsesReader()
   this->ConvertUnits = false; 
   this->Controller=vtkMultiProcessController::GetGlobalController();
   
+  this->TimeStep    = 0;
+  this->TimeStepTolerance = 1E-6;
 }
 
 //----------------------------------------------------------------------------
@@ -243,9 +248,44 @@ int vtkRamsesReader::RequestInformation(
   this->PointDataArraySelection->AddArray("Tform");
 	this->PointDataArraySelection->AddArray("Type");
   this->PointDataArraySelection->AddArray("Velocity");
+  //
+  this->Filenames.clear();
+  this->TimeStepValues.clear();
+  int i=0;
+  //
+  std::string pattern;
+  std::ifstream infile(this->FileName);
+  while (infile.good()) {
+    infile >> pattern;
+    std::string newname = vtksys::SystemTools::GetFilenamePath(this->FileName) + "/" + pattern;
+    this->Filenames.push_back(newname);
+    this->TimeStepValues.push_back(i++);
+  }
+
+  outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(),
+    &this->TimeStepValues[0],
+    static_cast<int>(this->TimeStepValues.size()));
+  double timeRange[2];
+  timeRange[0] = this->TimeStepValues.front();
+  timeRange[1] = this->TimeStepValues.back();
+  outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), timeRange, 2);
 
 	return 1;
 }
+//----------------------------------------------------------------------------
+class RamsesTimeToleranceCheck: public std::binary_function<double, double, bool>
+{
+public:
+  RamsesTimeToleranceCheck(double tol) { this->tolerance = tol; }
+  double tolerance;
+  //
+    result_type operator()(first_argument_type a, second_argument_type b) const
+    {
+      bool result = (fabs(a-b)<=(this->tolerance));
+      return (result_type)result;
+    }
+};
+//----------------------------------------------------------------------------
 /*
 * Reads a file, optionally only the marked particles from the file, 
 * in the following order:
@@ -266,7 +306,7 @@ int vtkRamsesReader::RequestData(vtkInformation*,
   //
 	// Make sure we have a file to read.
   //
-  if(!this->FileName)
+  if(!this->FileName || this->Filenames.size()==0)
 	  {
     vtkErrorMacro("A FileName must be specified.");
     return 0;
@@ -277,22 +317,60 @@ int vtkRamsesReader::RequestData(vtkInformation*,
 	vtkInformation* outInfo = outputVector->GetInformationObject(0);
     // get this->UpdatePiece information
 
+  // get the output polydata
+  vtkPolyData *output = 
+    vtkPolyData::SafeDownCast(outInfo->Get(vtkDataObject::DATA_OBJECT()));
 
   this->UpdatePiece = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
 	this->UpdateNumPieces =outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
 
+  //
+  // Get the TimeStep Requested from the information if present
+  //
+  this->TimeOutOfRange = 0;
+  this->ActualTimeStep = this->TimeStep;
+  if (outInfo->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEPS()))
+    {
+    double requestedTimeValue = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEPS())[0];
+    this->ActualTimeStep = vtkstd::find_if(
+      this->TimeStepValues.begin(), this->TimeStepValues.end(),
+      vtkstd::bind2nd( RamsesTimeToleranceCheck( this->TimeStepTolerance ), requestedTimeValue ))
+      - this->TimeStepValues.begin();
+    //
+    if (requestedTimeValue<this->TimeStepValues.front() || requestedTimeValue>this->TimeStepValues.back())
+      {
+      this->TimeOutOfRange = 1;
+      }
+    output->GetInformation()->Set(vtkDataObject::DATA_TIME_STEPS(), &requestedTimeValue, 1);
+    }
+  else
+    {
+    double timevalue[1];
+    unsigned int index = this->ActualTimeStep;
+    if (index<this->TimeStepValues.size())
+      {
+      timevalue[0] = this->TimeStepValues[index];
+      }
+    else
+      {
+      timevalue[0] = this->TimeStepValues[0];
+      }
+    output->GetInformation()->Set(vtkDataObject::DATA_TIME_STEPS(), &timevalue[0], 1);
+    }
+
+  if (this->TimeOutOfRange) {
+    this->ActualTimeStep = 0;
+  }
+  std::string FilenameForTimestep = this->Filenames[this->ActualTimeStep];
+
 	//  Open the snapshot info file
-	std::string filename(this->FileName);
-	RAMSES::snapshot rsnap(filename , RAMSES::version3);    
+	RAMSES::snapshot rsnap(FilenameForTimestep , RAMSES::version3);    
 	vtkDebugMacro("simulation has " << rsnap.m_header.ncpu << " domains");
 
 
   
   
 
-  // get the output polydata
-  vtkPolyData *output = \
-      vtkPolyData::SafeDownCast(outInfo->Get(vtkDataObject::DATA_OBJECT()));
   vtkSmartPointer<vtkPolyData> RamsesReadInitialOutput = \
       vtkSmartPointer<vtkPolyData>::New();  
 	int mympirank=vtkMultiProcessController::GetGlobalController()->GetLocalProcessId();
@@ -457,7 +535,7 @@ int vtkRamsesReader::RequestData(vtkInformation*,
 		// so reading all particles
 		// Open particle data source for first cpu
     // just to get the var names..... TODO: only need to do this on one cpu
-		RAMSES::PART::data local_data(filename, 1 );
+		RAMSES::PART::data local_data(FilenameForTimestep, 1 );
 		// Retrieve the available variable names from the file
 		std::vector< std::string > varnames;
 		local_data.get_var_names( std::back_inserter(varnames));
@@ -477,6 +555,7 @@ int vtkRamsesReader::RequestData(vtkInformation*,
         double data;
         // particle id
         pdataint.get_var("particle_ID");
+        ids.reserve(pdataint.size(i));
         for(unsigned ip=0; ip < pdataint.size(i); ++ip)
         {
           int dataint = pdataint(i,ip);
@@ -484,6 +563,7 @@ int vtkRamsesReader::RequestData(vtkInformation*,
         }
         // pos x
         pdata.get_var("position_x");
+        x.reserve(pdata.size(i));
         for(unsigned ip=0; ip < pdata.size(i); ++ip)
         {
           data = pdata(i,ip);
@@ -495,6 +575,7 @@ int vtkRamsesReader::RequestData(vtkInformation*,
         
         // pos y
         pdata.get_var("position_y");
+        y.reserve(pdata.size(i));
         for(unsigned ip=0; ip < pdata.size(i); ++ip)
         {
           data = pdata(i,ip);
@@ -506,6 +587,7 @@ int vtkRamsesReader::RequestData(vtkInformation*,
         
         //pos z
         pdata.get_var("position_z");
+        z.reserve(pdata.size(i));
         for(unsigned ip=0; ip < pdata.size(i); ++ip)
         {
           data = pdata(i,ip); 
@@ -518,6 +600,7 @@ int vtkRamsesReader::RequestData(vtkInformation*,
 
         //velocity x
         pdata.get_var("velocity_x");
+        vx.reserve(pdata.size(i));
         for(unsigned ip=0; ip < pdata.size(i); ++ip)
         {
           data = pdata(i,ip); 
@@ -530,6 +613,7 @@ int vtkRamsesReader::RequestData(vtkInformation*,
         
         //velocity y
         pdata.get_var("velocity_y");
+        vy.reserve(pdata.size(i));
         for(unsigned ip=0; ip < pdata.size(i); ++ip)
         {
           data = pdata(i,ip); 
@@ -541,6 +625,7 @@ int vtkRamsesReader::RequestData(vtkInformation*,
 
         //velocity z
         pdata.get_var("velocity_z");
+        vz.reserve(pdata.size(i));
         for(unsigned ip=0; ip < pdata.size(i); ++ip)
         {
           data = pdata(i,ip); 
@@ -552,6 +637,7 @@ int vtkRamsesReader::RequestData(vtkInformation*,
 
         //pos z
         pdata.get_var("mass");
+        mass.reserve(pdata.size(i));
         for(unsigned ip=0; ip < pdata.size(i); ++ip)
         {
           data = pdata(i,ip); 
@@ -563,6 +649,7 @@ int vtkRamsesReader::RequestData(vtkInformation*,
         
         if(!dark_only) {
           pdata.get_var("age");
+          age.reserve(pdata.size(i));
           for(unsigned ip=0; ip < pdata.size(i); ++ip)
           {
             data = pdata(i,ip); 
@@ -572,6 +659,7 @@ int vtkRamsesReader::RequestData(vtkInformation*,
             age.push_back(data);
           }
           pdata.get_var("metallicity");
+          metals.reserve(pdata.size(i));
           for(unsigned ip=0; ip < pdata.size(i); ++ip)
           {
             data = pdata(i,ip); 
@@ -585,7 +673,8 @@ int vtkRamsesReader::RequestData(vtkInformation*,
 
     vtkErrorMacro("finished reading and x is of size " << x.size() );
 
-		// computing minimum_darkparticle_mass and separating dark, star (later gas)
+    type.reserve(x.size());
+    // computing minimum_darkparticle_mass and separating dark, star (later gas)
     min_darkparticle_mass=DBL_MAX;
 		for(unsigned i=0;i< x.size();i++) {
 			// IDs > 0: star or dark
