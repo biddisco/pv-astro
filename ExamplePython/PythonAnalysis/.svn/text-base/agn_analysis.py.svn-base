@@ -1,0 +1,36 @@
+from math import pi
+ROOT_DIR='/Users/corbett/Documents/Projects/pvaddons/'
+# Reading in file
+ramses_file = RamsesReader( AaaFileName='/home/itp/teyssier/lustre/AqC6/output_00193/info_00193.txt' , PointArrays = ['Age', 'Eps', 'Hsmooth', 'Mass', 'Metals', 'Potential', 'Rho', 'Temperature', 'Tform', 'Type', 'Velocity'],ParticleMassGuess = 3000000000.0) # particle mass guess large as we don't want to bother creating dark particles
+ramses_file.Show()
+Render()
+
+# Converting units
+unitConversionCode=open(ROOT_DIR+'ParaViz/PythonScripts/unit_conversion.py').read()
+exec unitConversionCode
+
+# Selecting only dark particles
+thresh=Threshold(Scalars = ['POINTS', 'type'],ThresholdRange = [0.0, 0.0])
+Show()
+Render()
+
+# Now converting
+center=[0.567804, 0.586049, 0.559157] #hardcoded, got from PV-meshless which can in principle be scripted
+if not center:
+  ## TODO: here use pv-meshless to script and calculate the center
+  center=[0.0,0.0,0.0]
+  ppf = ParticlePartitionFilter()
+  print center
+
+# Selecting the inner 20 kpc for further analysis
+clip = Clip( ClipType="Sphere",InsideOut = 1 )
+clip.ClipType.Center = map(lambda x: conv_factor*x,center)
+clip.ClipType.Radius = 20.0
+Show()
+Render()
+ResetCamera()
+
+# Doing a profile
+
+# Computing the virial radius
+#p_crit=
