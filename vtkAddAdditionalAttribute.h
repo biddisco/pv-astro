@@ -25,7 +25,8 @@
 enum FileFormat 
 {
   FORMAT_SKID_ASCII=0,
-  FORMAT_HOP_DENSITY_BIN=1
+  FORMAT_HOP_DENSITY_BIN=1,
+	FORMAT_HOP_MARKFILE_BIN=2
 };
 
 class VTK_EXPORT vtkAddAdditionalAttribute : public vtkPointSetAlgorithm
