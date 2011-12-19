@@ -280,9 +280,13 @@ int vtkGraficReader::RequestData(vtkInformation*,
 	unsigned long idx;
 	
 	// read/write star, 
+	if(starBeginIndex!=starEndIndex){
+		//only try to seek if there are star particles at all
+		fioSeek(grafic,starBeginIndex,FIO_SPECIES_STAR);    
+	}
   for(i=starBeginIndex; i<starEndIndex; i++) {
 
-    fioSeek(grafic,i,FIO_SPECIES_STAR);    
+
     fioReadStar(grafic,
 								&piOrder,pdPos,pdVel,&pfMass,&pfSoft,&pfPot,&pfMetals,&pfTform);
 		// TODO: read the rest of the variables!
@@ -301,10 +305,14 @@ int vtkGraficReader::RequestData(vtkInformation*,
 		this->Tform->SetTuple1(idx,pfTform);
   }
   
-  
+
 	// read/write dark
+	if(darkBeginIndex!=darkEndIndex){
+		//only try to seek if there are dark particles at all
+
+		fioSeek(grafic,darkBeginIndex,FIO_SPECIES_DARK);
+	}
   for(i=darkBeginIndex; i<darkEndIndex; i++) {
-    fioSeek(grafic,i,FIO_SPECIES_DARK);
     fioReadDark(grafic,
 								&piOrder,pdPos,pdVel,&pfMass,&pfSoft,&pfPot);
     //fprintf(stdout,"%d,%llu,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",
@@ -320,10 +328,13 @@ int vtkGraficReader::RequestData(vtkInformation*,
 		this->EPS->SetTuple1(idx,pfSoft);
 		this->Potential->SetTuple1(idx,pfPot);
   }
-
 	// read/write gas
+	if(gasBeginIndex!=gasEndIndex){
+		//only try to seek if there are gas particles at all
+
+		fioSeek(grafic,gasBeginIndex,FIO_SPECIES_SPH);
+	}
   for(i=gasBeginIndex; i<gasEndIndex; i++) {
-    fioSeek(grafic,i,FIO_SPECIES_SPH);
     fioReadSph(grafic,
 							 &piOrder,pdPos,pdVel,&pfMass,&pfSoft,&pfPot,&pfRho,&pfTemp,&pfMetals);
     //fprintf(stdout,"%d,%llu,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",
@@ -342,7 +353,6 @@ int vtkGraficReader::RequestData(vtkInformation*,
 		this->Temperature->SetTuple1(idx,pfTemp);
 		this->Metals->SetTuple1(idx,pfMetals);
   }
-	
 	
 	
   vtkDebugMacro("Reading all points from file " << this->FileName);
