@@ -30,7 +30,7 @@ class vtkFloatArray;
 class vtkPoints;
 class vtkCellArray;
 class vtkDataArraySelection;
-
+class vtkMultiProcessController;
 class VTK_EXPORT vtkStrangeAttractors : public vtkPolyDataAlgorithm
 {
 public:
@@ -66,7 +66,10 @@ protected:
   vtkSmartPointer<vtkCellArray>   Vertices;
   vtkSmartPointer<vtkIntArray>   Primes;
 	vtkSmartPointer<vtkFloatArray>   Velocity;
-	int PrimesOnly;
+  int PrimesOnly;
+  int           UpdatePiece;
+  int           UpdateNumPieces;
+  bool RunInParallel(vtkMultiProcessController* controller);
 
 private:
   vtkStrangeAttractors(const vtkStrangeAttractors&);  // Not implemented.
