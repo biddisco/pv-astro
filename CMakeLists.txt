@@ -169,4 +169,12 @@ TARGET_LINK_LIBRARIES(
 	pv_astro
 	TipsyHelpers
 	SQLitelib
+	#gmp
 	)
+#TARGET_LINK_LIBRARIES(pv_astro #/Users/corbett/Documents/Projects/pvaddons/ParaViz/ParaViz_src/fio/libFio.so)
+
+IF (NOT WIN32)
+	TARGET_LINK_LIBRARIES(pv_astro
+		fio
+	)
+ENDIF (NOT WIN32)
