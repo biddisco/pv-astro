@@ -155,8 +155,9 @@ int vtkStrangeAttractors::RequestData(vtkInformation*,
   // only displaying primes. Useful for allocating arrays
   // TODO: this crashes for big files (bigger than int)
   // think I have to limit reading in to one portion of the file at a time
-  unsigned char buf[fileSize];	
-  fread(buf,1,fileSize,filep); 
+  std::vector<char> buf;
+  buf.assign(fileSize,0);	
+  fread(&buf[0],1,fileSize,filep); 
   // TODO: add back in
   // Removing for debugging /*
 #ifdef HAS_GMP
