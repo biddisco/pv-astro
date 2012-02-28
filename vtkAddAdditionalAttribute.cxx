@@ -220,7 +220,7 @@ int vtkAddAdditionalAttribute::RequestData(vtkInformation*,
      int attributeData[1];
      
      float attributeDataF[1];
-     vtkDebugMacro("number hop particles: "<< numberParticles[0]);
+     vtkErrorMacro("number hop particles: "<< numberParticles[0]);
 
      unsigned long pieceSize = floor(numberParticles[0]*1.0/this->UpdateNumPieces);
      unsigned long beginIndex = this->UpdatePiece*pieceSize;
@@ -230,34 +230,36 @@ int vtkAddAdditionalAttribute::RequestData(vtkInformation*,
 
      // here's where we do an fseek
     // read additional attribute for all particles
-     vtkDebugMacro("updatepiece: " << this->UpdatePiece  
+     vtkErrorMacro("updatepiece: " << this->UpdatePiece  
 		   << " pieceSize: " << pieceSize
 		   << " numberElts: " << numberElts
 		   << " outputNumPoints: " << output->GetPoints()->GetNumberOfPoints()
 		   << " beginIndex: " << beginIndex
 		   << " endIndex: " << endIndex << "\n");
-
-     if(numberElts ==					\
-	output->GetPoints()->GetNumberOfPoints()) 
-       {
+     if(numberElts ==				\
+     	output->GetPoints()->GetNumberOfPoints()) 
+      {
 
 	AllocateDataArray(output,this->AttributeName,1,numberElts);		
-	fseek(infile, sizeof(int)*beginIndex , SEEK_SET);
+	fseek(infile, sizeof(int)*(beginIndex+1) , SEEK_SET); // plus one as we want to skip the beginning line of the file which is the number of particles!
 	for(unsigned long idx=0; idx<numberElts; idx++)
 	  {
 	    error = fread(attributeData, sizeof(int),1, infile);
+	    if(attributeData[0]!= 0 && attributeData[0]!= 1){
+	      vtkErrorMacro("value of attribute data is neither 0 nor 1! " << attributeData[0] << "\n");
+	    }
 	    attributeDataF[0]=(float)attributeData[0];
 	    SetDataValue(output,this->AttributeName,idx,
 			 &attributeDataF[0]);			
 	    
 	  }
 	return 1;
-       }
+      }
     
 
      else {
-      vtkErrorMacro("number of points in input must be equal to number of points in HOP file " << numberParticles[0]);
-      }
+       vtkErrorMacro("number of points " << numberElts << " in input must be equal to number of points in HOP file " << output->GetPoints()->GetNumberOfPoints() << "\n" );
+     }
     
   }
 

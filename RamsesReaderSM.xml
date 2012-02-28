@@ -43,6 +43,17 @@
           This property lists which point attributes to read.
         </Documentation>
       </StringVectorProperty>
+      
+      <IntVectorProperty
+         name="ConvertUnits"
+         command="SetConvertUnits"
+         number_of_elements="1"
+         default_values="0" >
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          When set, units are converted, coordinates(kpc), velocities(km/s), masses(Msol), age(Gyr)
+        </Documentation>
+      </IntVectorProperty>
 
       <DoubleVectorProperty
         name="ParticleMassGuess"

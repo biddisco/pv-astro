@@ -69,6 +69,18 @@ public:
   // Set/Get the optional particle mass guess 
 	vtkSetMacro(HasParticleData,bool);
  	vtkGetMacro(HasParticleData,bool);
+  
+  // Description:
+  // Set/Get whether we should convert units
+	vtkSetMacro(ConvertUnits,bool);
+ 	vtkGetMacro(ConvertUnits,bool);
+	
+  // Description:
+  // Set/Get a special flag that tells the reader to not read any data, only
+  // to extract the simulation time. This can be used to iterate over a list 
+  // of files and generate the correct time information for animations etc.
+	vtkSetMacro(ReadHeaderOnly,bool);
+ 	vtkGetMacro(ReadHeaderOnly,bool);
 	
 	// Description:
   // An H5Part file may contain multiple arrays
@@ -103,6 +115,8 @@ protected:
 	char* FileName;
 	double ParticleMassGuess;
 	bool HasParticleData;
+  bool ConvertUnits;
+  int  ReadHeaderOnly;
 	int RequestInformation(vtkInformation*,	vtkInformationVector**,
 		vtkInformationVector*);
 

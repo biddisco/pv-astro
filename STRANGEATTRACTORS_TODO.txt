@@ -1,0 +1,6 @@
+
+*install gmp
+*install pv standard (instead of git repo)
+*verify that I can open a file of arbitrary extension
+*redo some serial analysis
+*redo some parallel analysis (setup at cscs?)

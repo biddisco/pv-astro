@@ -387,6 +387,8 @@ void vtkProfileFilter::MergeTables(vtkPointSet* input,
 void vtkProfileFilter::SetBoundsAndBinExtents(vtkPointSet* input, 
   vtkDataSet* source)
 {
+
+
   if(RunInParallel(this->Controller))
     {
     int procId=this->Controller->GetLocalProcessId();
@@ -412,6 +414,11 @@ void vtkProfileFilter::SetBoundsAndBinExtents(vtkPointSet* input,
     source->GetCenter(this->Center);
     //calculating the the max R
     this->MaxR=ComputeMaxR(input,this->Center);      
+    }
+  if(this->ProfileHeight!=0) 
+    {
+      // leaving the computation of the box bounds in case we need it
+      this->MaxR=this->ProfileHeight;
     }
   // this->MaxR, this->BinNumber are already set/synced
   // whether we are in parallel or serial, and each process can perform
