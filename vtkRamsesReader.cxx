@@ -20,6 +20,7 @@
 #include "vtkSmartPointer.h"
 #include "vtkDataArraySelection.h"
 #include "vtkMultiProcessController.h"
+#include "vtkInformationDoubleKey.h"
 #include <time.h>
 #include <cmath>
 #include <assert.h>
@@ -41,7 +42,7 @@
 
 vtkCxxRevisionMacro(vtkRamsesReader, "$Revision: 1.0 $");
 vtkStandardNewMacro(vtkRamsesReader);
-
+vtkInformationKeyMacro(vtkRamsesReader,VCIRC_CONVERSION,Double);
 //... define the RAMSES base cell type to be of cell_locally_essential type
 //... - this type allows moving between refinement levels
 typedef RAMSES::AMR::cell_locally_essential<> RAMSES_cell;
@@ -233,10 +234,11 @@ int vtkRamsesReader::RequestInformation(
 	vtkInformationVector** vtkNotUsed(inputVector),
 	vtkInformationVector* outputVector)
 {
-	vtkInformation* outInfo = outputVector->GetInformationObject(0);
+  vtkInformation* outInfo = outputVector->GetInformationObject(0);
 	// means that the data set can be divided into an arbitrary number of pieces
-	outInfo->Set(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(),
-		-1);
+  outInfo->Set(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(),
+	       -1);
+
 
   this->PointDataArraySelection->AddArray("Potential");
   this->PointDataArraySelection->AddArray("Mass");
@@ -307,7 +309,7 @@ int vtkRamsesReader::RequestData(vtkInformation*,
 {
 
   //
-	// Make sure we have a file to read.
+  // Make sure we have a file to read.
   //
   if(!this->FileName || this->Filenames.size()==0)
 	  {
@@ -315,10 +317,11 @@ int vtkRamsesReader::RequestData(vtkInformation*,
     return 0;
     }
 
-	// TODO: Open the Ramses standard file and abort if there is an error.
-	// Get output information
-	vtkInformation* outInfo = outputVector->GetInformationObject(0);
+  // TODO: Open the Ramses standard file and abort if there is an error.
+  // Get output information
+  vtkInformation* outInfo = outputVector->GetInformationObject(0);
     // get this->UpdatePiece information
+  outInfo->Set(vtkRamsesReader::VCIRC_CONVERSION(),2.0);
 
   // get the output polydata
   vtkPolyData *output = 

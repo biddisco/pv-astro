@@ -26,7 +26,7 @@
 
 vtkCxxRevisionMacro(vtkAddAdditionalAttribute, "$Revision: 1.72 $");
 vtkStandardNewMacro(vtkAddAdditionalAttribute);
-
+vtkCxxSetObjectMacro(vtkAddAdditionalAttribute, Controller, vtkMultiProcessController);
 //----------------------------------------------------------------------------
 vtkAddAdditionalAttribute::vtkAddAdditionalAttribute()
 {
@@ -38,6 +38,9 @@ vtkAddAdditionalAttribute::vtkAddAdditionalAttribute()
     vtkDataSetAttributes::SCALARS);
 	this->AttributeFile = 0;
 	this->AttributeName = 0; 
+  this->Controller = NULL;
+  this->SetController(vtkMultiProcessController::GetGlobalController());
+
 }
 
 //----------------------------------------------------------------------------
@@ -45,6 +48,7 @@ vtkAddAdditionalAttribute::~vtkAddAdditionalAttribute()
 {
   this->SetAttributeFile(0);
   this->SetAttributeName(0);
+  this->SetController(0);
 }
 
 //----------------------------------------------------------------------------
@@ -162,108 +166,59 @@ int vtkAddAdditionalAttribute::RequestData(vtkInformation*,
     attributeInFile.close();
 
   }
-  else if(this->AttributeFileFormatType==FORMAT_HOP_DENSITY_BIN)
-  {
-     // This part not yet supported in Parallel!
-    // TODO: check file opens correctly
-     FILE *infile = fopen(this->AttributeFile, "r");
-     int numberParticles[1];
-     int error = fread(numberParticles, sizeof(int),1, infile);
-     float attributeData[1];
-    // read additional attribute for all particles
-     vtkDebugMacro("number hop particles: "<< numberParticles[0]);
-
-     unsigned long pieceSize = floor(numberParticles[0]*1.0/this->UpdateNumPieces);
-     unsigned long beginIndex = this->UpdatePiece*pieceSize;
-     unsigned long endIndex = (this->UpdatePiece == this->UpdateNumPieces - 1) ?\
-       numberParticles[0] : (this->UpdatePiece+1)*pieceSize;
-     unsigned long numberElts = endIndex-beginIndex;
-     vtkDebugMacro("updatepiece: " << this->UpdatePiece  
-		   << " pieceSize: " << pieceSize
-		   << " numberElts: " << numberElts
-		   << " outputNumPoints: " << output->GetPoints()->GetNumberOfPoints()
-		   << " beginIndex: " << beginIndex
-		   << " endIndex: " << endIndex << "\n");
-
-
-
-    if(numberParticles[0] == \
-       output->GetPoints()->GetNumberOfPoints()) 
-      {
-	AllocateDataArray(output,this->AttributeName,1,
-			  output->GetPoints()->GetNumberOfPoints());		
-
-	fseek (infile , sizeof(float)*beginIndex , SEEK_SET);
-	for(unsigned long idx=0; idx<numberElts; idx++)
-	  {
-	    error = fread(attributeData, sizeof(float),1, infile);
-	    SetDataValue(output,this->AttributeName,idx,
-			 &attributeData[0]);			
-	    
-	  }
-	return 1;
-      }
-    
-    
-    else {
-      vtkErrorMacro("number of points in input must be equal to number of points in HOP file " << numberParticles[0]);
-    }
-    
-  }
-  else if(this->AttributeFileFormatType==FORMAT_HOP_MARKFILE_BIN)
-  {
+  else 
+    {
     /// TODO TODO: TEST THE PARALLEL IMPLEMENTATION
     // TODO: check file opens correctly
      FILE *infile = fopen(this->AttributeFile, "rb");
      int numberParticles[1];
      int error = fread(numberParticles, sizeof(int),1, infile);
-     int attributeData[1];
      
+     int attributeDataI[1];     
      float attributeDataF[1];
-     vtkErrorMacro("number hop particles: "<< numberParticles[0]);
 
-     unsigned long pieceSize = floor(numberParticles[0]*1.0/this->UpdateNumPieces);
-     unsigned long beginIndex = this->UpdatePiece*pieceSize;
+     
+     vtkErrorMacro("number hop particles: "<< numberParticles[0]);
+   
+
+     unsigned long beginIndex=ComputeParticleOffset(this->Controller,output);
+
+     //unsigned long pieceSize = floor(numberParticles[0]*1.0/this->UpdateNumPieces);
+     //unsigned long beginIndex = this->UpdatePiece*pieceSize;
+     unsigned long numberElts = output->GetPoints()->GetNumberOfPoints();
      unsigned long endIndex = (this->UpdatePiece == this->UpdateNumPieces - 1) ?\
-       numberParticles[0] : (this->UpdatePiece+1)*pieceSize;
-     unsigned long numberElts = endIndex-beginIndex;
+       numberParticles[0] : beginIndex+numberElts;
+
 
      // here's where we do an fseek
     // read additional attribute for all particles
      vtkErrorMacro("updatepiece: " << this->UpdatePiece  
-		   << " pieceSize: " << pieceSize
 		   << " numberElts: " << numberElts
 		   << " outputNumPoints: " << output->GetPoints()->GetNumberOfPoints()
 		   << " beginIndex: " << beginIndex
 		   << " endIndex: " << endIndex << "\n");
-     if(numberElts ==				\
-     	output->GetPoints()->GetNumberOfPoints()) 
-      {
 
-	AllocateDataArray(output,this->AttributeName,1,numberElts);		
-	fseek(infile, sizeof(int)*(beginIndex+1) , SEEK_SET); // plus one as we want to skip the beginning line of the file which is the number of particles!
-	for(unsigned long idx=0; idx<numberElts; idx++)
+     AllocateDataArray(output,this->AttributeName,1,numberElts);		
+     fseek(infile, sizeof(int)*(beginIndex+1) , SEEK_SET); // plus one as we want to skip the beginning line of the file which is the number of particles!
+     for(unsigned long idx=0; idx<numberElts; idx++)
+       {
+	 
+	if(this->AttributeFileFormatType==FORMAT_HOP_MARKFILE_BIN) 
 	  {
-	    error = fread(attributeData, sizeof(int),1, infile);
-	    if(attributeData[0]!= 0 && attributeData[0]!= 1){
-	      vtkErrorMacro("value of attribute data is neither 0 nor 1! " << attributeData[0] << "\n");
+	  error = fread(attributeDataI, sizeof(attributeDataI),1, infile);
+	  if(attributeDataI[0]!= 0 && attributeDataI[0]!= 1)
+	    {
+	      vtkErrorMacro("value of attribute data for a hop markfile is neither 0 nor 1! " << attributeDataI[0] << "\n");
+	      return 1;
 	    }
-	    attributeDataF[0]=(float)attributeData[0];
-	    SetDataValue(output,this->AttributeName,idx,
-			 &attributeDataF[0]);			
-	    
+	  attributeDataF[0]=(float)attributeDataI[0];
 	  }
-	return 1;
-      }
-    
-
-     else {
-       vtkErrorMacro("number of points " << numberElts << " in input must be equal to number of points in HOP file " << output->GetPoints()->GetNumberOfPoints() << "\n" );
-     }
-    
-  }
-
-  else {
-    return 0;
-  }
+	else 
+	  {
+	    error = fread(attributeDataF, sizeof(attributeDataF),1, infile);
+	  }
+	 SetDataValue(output,this->AttributeName,idx,&attributeDataF[0]);			
+       }
+    }
+  return 0;
 }

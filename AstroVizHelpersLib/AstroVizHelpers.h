@@ -157,7 +157,8 @@ enum PointsInRadiusMPIData
 {
 	TOTAL_MASS_IN_SPHERE,
 	TOTAL_NUMBER_IN_SPHERE,
-	MAX_R
+	MAX_R,
+	NUMBER_PARTICLE_OFFSET
 };
 // Description:
 // Uses the Illinois root finding method to find the root of the function
@@ -253,6 +254,11 @@ struct VirialRadiusInfo
 	vtkstd::string massArrayName;
 };
 
+
+// Description:
+// for processors p=0 to n, computes
+//     particle offset = sum(particles handled by pi<p)
+unsigned long ComputeParticleOffset(vtkMultiProcessController* controller,vtkPointSet* input);
 
 // Description:
 // Computes the virial radius >=0 base upon the user defined 

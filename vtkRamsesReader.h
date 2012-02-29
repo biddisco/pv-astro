@@ -33,6 +33,7 @@ class vtkPoints;
 class vtkCellArray;
 class vtkDataArraySelection;
 class vtkMultiProcessController;
+class vtkInformationDoubleKey;
 
 // use this command to generate a time series info file.
 // Must be done from the ramses output dir where all the time series dirs are
@@ -53,6 +54,11 @@ public:
   static vtkRamsesReader* New();
   vtkTypeRevisionMacro(vtkRamsesReader,vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
+
+  // gives the vcircconversion factor for profile or downstream computation, if necessary
+  static vtkInformationDoubleKey* VCIRC_CONVERSION();
+
+
   // Description:
   // Set/Get the name of the file from which to read points.
 	vtkSetStringMacro(FileName);

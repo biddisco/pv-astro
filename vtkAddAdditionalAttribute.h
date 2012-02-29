@@ -21,13 +21,14 @@
 #ifndef __vtkAddAdditionalAttribute_h
 #define __vtkAddAdditionalAttribute_h
 #include "vtkPointSetAlgorithm.h"
-
+class vtkMultiProcessController;
 enum FileFormat 
 {
   FORMAT_SKID_ASCII=0,
   FORMAT_HOP_DENSITY_BIN=1,
 	FORMAT_HOP_MARKFILE_BIN=2
 };
+
 
 class VTK_EXPORT vtkAddAdditionalAttribute : public vtkPointSetAlgorithm
 {
@@ -48,6 +49,11 @@ public:
   // Set/Get the name of the additional attribute
   vtkSetMacro(AttributeFileFormatType,int);
   vtkGetMacro(AttributeFileFormatType,int);
+  // Description:
+  // By defualt this filter uses the global controller,
+  // but this method can be used to set another instead.
+  virtual void SetController(vtkMultiProcessController*);
+
 
 
 //BTX
@@ -67,19 +73,19 @@ protected:
   int AttributeFileFormatType;
   int UpdatePiece;
   int UpdateNumPieces;
-
+  vtkMultiProcessController *Controller;
 
 
 private:
   vtkAddAdditionalAttribute(const vtkAddAdditionalAttribute&);  // Not implemented.
   void operator=(const vtkAddAdditionalAttribute&);  // Not implemented.
-	// Description:
-	// Reads this file in as an additional attribute array.
- //  If a marked file was specified, it reads in 
-	// only the particles at indices which were marked
-	int ReadAdditionalAttributeFile(
-		vtkDataArray* globalIdArray, 
-		vtkPointSet* output);
+  // Description:
+  // Reads this file in as an additional attribute array.
+  //  If a marked file was specified, it reads in 
+  // only the particles at indices which were marked
+  int ReadAdditionalAttributeFile(
+				  vtkDataArray* globalIdArray, 
+				  vtkPointSet* output);
 //ETX
 };
 

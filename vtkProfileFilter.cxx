@@ -23,9 +23,9 @@
 #include "vtkLine.h"
 #include "vtkPlane.h"
 #include "vtkTimerLog.h"
-#include <cmath>
+#include "vtkRamsesReader.h"
 #include <algorithm>
-using vtkstd::string;
+
 
 vtkCxxRevisionMacro(vtkProfileFilter, "$Revision: 1.72 $");
 vtkStandardNewMacro(vtkProfileFilter);
@@ -83,6 +83,19 @@ int vtkProfileFilter::RequestData(vtkInformation *request,
 {
   vtkSmartPointer<vtkTimerLog> timer = vtkSmartPointer<vtkTimerLog>::New();
   timer->StartTimer();
+
+
+  vtkInformation* outInfo = outputVector->GetInformationObject(0);
+  vtkInformation* inInfo = inputVector[0]->GetInformationObject(0);
+  if(outInfo->Has(vtkRamsesReader::VCIRC_CONVERSION()))
+    {
+      vtkErrorMacro("we have a vcirc conversion factor! " << outInfo->Get(vtkRamsesReader::VCIRC_CONVERSION()));
+    }
+  else
+    {
+      vtkErrorMacro("no conversion factor");
+    }
+
 
   // Get the input with which we want to work
   vtkPointSet* input = vtkPointSet::GetData(inputVector[0]);

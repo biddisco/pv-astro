@@ -279,6 +279,38 @@ double IllinoisRootFinder(double (*func)(double,void *),void *ctx,\
   return(t);
 }
 
+unsigned long ComputeParticleOffset(
+	vtkMultiProcessController* controller,vtkPointSet* input)
+{
+
+	unsigned long npOffset=0;
+        unsigned long npLocalEnd=input->GetPoints()->GetNumberOfPoints();
+	if(RunInParallel(controller))
+		{
+		int procId=controller->GetLocalProcessId();
+		int numProc=controller->GetNumberOfProcesses();
+		if(procId==0)
+		  {
+		    // We only have to send to proc 1 our npLocal
+		    controller->Send(&npLocalEnd,1,1,NUMBER_PARTICLE_OFFSET);
+		  }
+		else if(procId==numProc-1)
+		  {
+		    // We only have to receive from numProc-2
+		    controller->Receive(&npOffset,1,numProc-2,NUMBER_PARTICLE_OFFSET);
+		  }
+                else 
+		  {
+		    // We have to both receive, then sum, then send.
+		    controller->Receive(&npOffset,1,procId-1,NUMBER_PARTICLE_OFFSET);
+		    npLocalEnd += npOffset;
+		    controller->Send(&npLocalEnd,1,procId+1,NUMBER_PARTICLE_OFFSET);
+		  }
+		}
+	return npOffset;
+}
+
+
 //----------------------------------------------------------------------------
 double ComputeMaxRadiusInParallel(
 	vtkMultiProcessController* controller,vtkPointSet* input, double point[])
@@ -665,7 +697,7 @@ void ComputeVelocityDispersion(double *vSquaredAve, double *vAve, double result[
 //----------------------------------------------------------------------------
 void ComputeCircularVelocity(double *cumulativeMass, double *binRadius, double result[])
 {
-	result[0]=cumulativeMass[0]/binRadius[0];
+         result[0]=sqrt(cumulativeMass[0]/binRadius[0]);
 }
 
 //----------------------------------------------------------------------------
