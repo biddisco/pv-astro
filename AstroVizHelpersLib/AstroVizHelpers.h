@@ -33,6 +33,16 @@ class vtkInformationVector;
 class vtkMultiProcessController;
 class vtkVariant;
 
+// CGS units needed
+static const float kpcInCm=3.08568025*pow(10.0,21.0);
+static const float pcInCm=3.08568025* pow(10.0,18.0);
+static const float kmInCm=pow(10.0,5.0);
+static const float GyrInS=3.1536*pow(10.0,16.0);
+static const float yrInS=3.1553*pow(10.0,7.0);
+static const float msolInG=1.98892*pow(10.0,33.0);
+
+
+
 /*
 * The following methods take and modify vtkPolyData
 */

@@ -12,6 +12,7 @@
 #include "vtkCellArray.h"
 #include "vtkDoubleArray.h" 
 #include "vtkIntArray.h"
+#include "AstroVizHelpersLib/AstroVizHelpers.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkDistributedDataFilter.h"
 #include "vtkMultiProcessController.h"
@@ -56,14 +57,6 @@ typedef RAMSES::HYDRO::multi_domain_data< RAMSES_tree, RAMSES::HYDRO::data<RAMSE
 typedef RAMSES::PART::multi_domain_data< RAMSES_tree, double > multi_part; 
 typedef RAMSES::PART::multi_domain_data< RAMSES_tree, int > multi_part_int; 
 
-
-// CGS units needed // TODO: put these in a header file
-float kpcInCm=3.08568025*pow(10.0,21.0);
-float pcInCm=3.08568025* pow(10.0,18.0);
-float kmInCm=pow(10.0,5.0);
-float GyrInS=3.1536*pow(10.0,16.0);
-float yrInS=3.1553*pow(10.0,7.0);
-float msolInG=1.98892*pow(10.0,33.0);
 
 // if convert units is set to true we
 // * Converting coordinates from simulation units to kpc
@@ -304,7 +297,7 @@ public:
 * 	 attribute into a data array, reading only those marked if necessary.
 */
 //----------------------------------------------------------------------------
-int vtkRamsesReader::RequestData(vtkInformation*,
+int vtkRamsesReader::RequestData(vtkInformation* req,
 	vtkInformationVector**,vtkInformationVector* outputVector)
 {
 
@@ -322,6 +315,8 @@ int vtkRamsesReader::RequestData(vtkInformation*,
   vtkInformation* outInfo = outputVector->GetInformationObject(0);
     // get this->UpdatePiece information
   outInfo->Set(vtkRamsesReader::VCIRC_CONVERSION(),2.0);
+
+  req->Append(vtkExecutive::KEYS_TO_COPY(),vtkRamsesReader::VCIRC_CONVERSION());
 
   // get the output polydata
   vtkPolyData *output = 

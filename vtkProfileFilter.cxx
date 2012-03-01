@@ -87,9 +87,10 @@ int vtkProfileFilter::RequestData(vtkInformation *request,
 
   vtkInformation* outInfo = outputVector->GetInformationObject(0);
   vtkInformation* inInfo = inputVector[0]->GetInformationObject(0);
-  if(outInfo->Has(vtkRamsesReader::VCIRC_CONVERSION()))
+  if(inInfo->Has(vtkRamsesReader::VCIRC_CONVERSION()))
     {
-      vtkErrorMacro("we have a vcirc conversion factor! " << outInfo->Get(vtkRamsesReader::VCIRC_CONVERSION()));
+      vtkErrorMacro("we have a vcirc conversion factor! " << inInfo->Get(vtkRamsesReader::VCIRC_CONVERSION()));
+     
     }
   else
     {
