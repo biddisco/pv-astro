@@ -2,11 +2,16 @@ PROJECT("pv-astro")
 
 cmake_minimum_required(VERSION 2.8)
 if(COMMAND cmake_policy)
-      cmake_policy(SET CMP0003 OLD)
+  cmake_policy(SET CMP0003 OLD)
 endif(COMMAND cmake_policy)
 
 FIND_PACKAGE(ParaView REQUIRED)
 INCLUDE(${PARAVIEW_USE_FILE})
+
+IF (VTK_USE_PARALLEL AND VTK_USE_MPI)
+  INCLUDE_DIRECTORIES(${VTK_MPI_INCLUDE_DIR})
+  ADD_DEFINITIONS(-DUSE_MPI)
+ENDIF (VTK_USE_PARALLEL AND VTK_USE_MPI)
 
 ###############
 # pv_astro plugin
@@ -40,80 +45,126 @@ IF(PARAVIEW_BUILD_QT_GUI)
   QT4_WRAP_CPP(MOC_SRCS pqTrackFilterPanel.h)
 
   ADD_PARAVIEW_OBJECT_PANEL(
-	IFACES IFACE_SRCS
-	CLASS_NAME pqTrackFilterPanel
-	XML_NAME TrackFilter
-	XML_GROUP filters
-	)
+    IFACES IFACE_SRCS
+    CLASS_NAME pqTrackFilterPanel
+    XML_NAME TrackFilter
+    XML_GROUP filters
+  )
   SET(PV_ASTRO_GUI_FILES pqTrackFilterPanel.cxx)
 
 ENDIF(PARAVIEW_BUILD_QT_GUI)
 
 #Defines the pv_astro plugin
 IF (NOT WIN32)
-	SET(GRAPHIC_SRCS
-		vtkGraficReader.cxx		
-	)
+  SET(GRAPHIC_SRCS
+    vtkGraficReader.cxx    
+  )
 ENDIF (NOT WIN32)
+
+#--------------------------------------------------
+# Files for MIP that must be wrapped in client server
+#--------------------------------------------------
+SET( mip_WRAPPED_SRCS
+  vtkMIPMapper.cxx
+  vtkMIPRepresentation.cxx
+)
+
+#--------------------------------------------------
+# Qt .ui files for MIP that are wrapped and added to plugin
+#--------------------------------------------------
+IF(PARAVIEW_BUILD_QT_GUI)
+  qt4_wrap_ui(MIP_UI_SRCS 
+    pqMIPDisplayPanelDecorator.ui
+  )
+
+  qt4_wrap_cpp(MIP_MOC_SRCS 
+    pqMIPDisplayPanelDecorator.h
+  )
+     
+  set(MIP_SRCS
+    pqMIPDisplayPanelDecorator.cxx
+  )
+
+  add_paraview_display_panel_decorator(
+    MIP_IFACES
+    MIP_IFACE_SRCS
+    CLASS_NAME pqMIPDisplayPanelDecorator
+    PANEL_TYPES pqDisplayProxyEditor
+  )
+ENDIF(PARAVIEW_BUILD_QT_GUI)
+
+#--------------------------------------------------
+# pv_astro Plugin
+#--------------------------------------------------
 ADD_PARAVIEW_PLUGIN(pv_astro "1.1"
-	SERVER_MANAGER_SOURCES 
-		vtkTipsyReader.cxx
-		vtkNSmoothFilter.cxx
-		vtkCenterOfMassFilter.cxx 
-		vtkProfileFilter.cxx
-		vtkMomentsOfInertiaFilter.cxx
-		vtkVirialRadiusFilter.cxx
-		vtkAddAdditionalAttribute.cxx 
-		vtkFriendsOfFriendsHaloFinder.cxx 
-		vtkRamsesReader.cxx
-        vtkSQLiteReader.cxx
-        vtkTrackFilter.cxx
-        vtkSimpleBin.cxx
-		vtkRamsesReader.cxx
-        ${GRAPHIC_SRCS}
+  SERVER_MANAGER_SOURCES 
+    vtkTipsyReader.cxx
+    vtkNSmoothFilter.cxx
+    vtkCenterOfMassFilter.cxx 
+    vtkProfileFilter.cxx
+    vtkMomentsOfInertiaFilter.cxx
+    vtkVirialRadiusFilter.cxx
+    vtkAddAdditionalAttribute.cxx 
+    vtkFriendsOfFriendsHaloFinder.cxx 
+    vtkRamsesReader.cxx
+    vtkSQLiteReader.cxx
+    vtkTrackFilter.cxx
+    vtkSimpleBin.cxx
+    vtkRamsesReader.cxx
+    ${GRAPHIC_SRCS}
+    ${mip_WRAPPED_SRCS}
 
-	SERVER_MANAGER_XML
-		TipsyReaderSM.xml
-		NSmoothFilterSM.xml
-		CenterOfMassFilter.xml
-		ProfileFilter.xml
-		MomentsOfInertiaFilter.xml 
-		VirialRadiusFilter.xml
-		AddAdditionalAttribute.xml 
-		FriendsOfFriendsHaloFinder.xml	
-		GraficReaderSM.xml
-        SQLiteReaderSM.xml
-        TrackFilterSM.xml
-        SimpleBinSM.xml
-		RamsesReaderSM.xml
-		#GadgetReaderSM.xml
+  SERVER_MANAGER_XML
+    TipsyReaderSM.xml
+    NSmoothFilterSM.xml
+    CenterOfMassFilter.xml
+    ProfileFilter.xml
+    MomentsOfInertiaFilter.xml 
+    VirialRadiusFilter.xml
+    AddAdditionalAttribute.xml 
+    FriendsOfFriendsHaloFinder.xml  
+    GraficReaderSM.xml
+    SQLiteReaderSM.xml
+    TrackFilterSM.xml
+    SimpleBinSM.xml
+    RamsesReaderSM.xml
+    #GadgetReaderSM.xml
+    vtkMIPRepresentation.xml
 
-	GUI_RESOURCES
-		TipsyReader.qrc
-        	SQLiteReader.qrc
-		RamsesReader.qrc
-		#GadgetReader.qrc
-		GraficReader.qrc		
-	GUI_RESOURCE_FILES
-		AstroVizFilterMenu.xml
-		
-	GUI_INTERFACES ${IFACES} 
-		SOURCES ${PV_ASTRO_GUI_FILES} ${MOC_SRCS} ${IFACE_SRCS}
-	)
+  GUI_RESOURCES
+    TipsyReader.qrc
+    SQLiteReader.qrc
+    RamsesReader.qrc
+    #GadgetReader.qrc
+    GraficReader.qrc    
+  GUI_RESOURCE_FILES
+    AstroVizFilterMenu.xml
+  GUI_INTERFACES 
+    ${IFACES} 
+    ${MIP_IFACES}  
+  GUI_SOURCES  
+    ${PV_ASTRO_GUI_FILES}
+    ${MOC_SRCS} 
+    ${MIP_MOC_SRCS}
+    ${IFACE_SRCS}
+    ${MIP_SRCS}
+    ${MIP_UI_SRCS}
+    ${MIP_IFACE_SRCS}
+  )
 #PARAVIEW_INCLUDE_WRAPPED_SOURCES(fio/fio.c fio/romberg.c)
 #Defines the StrangeAttractors plugin
 
 ADD_PARAVIEW_PLUGIN(StrangeAttractorsPlugin "1.0"
-	SERVER_MANAGER_SOURCES 
-		vtkStrangeAttractors.cxx
-	SERVER_MANAGER_XML
-		StrangeAttractorsSM.xml
-	GUI_RESOURCES
-		StrangeAttractors.qrc 
-	GUI_INTERFACES 
-	SOURCES 
-	)
-	
+  SERVER_MANAGER_SOURCES 
+    vtkStrangeAttractors.cxx
+  SERVER_MANAGER_XML
+    StrangeAttractorsSM.xml
+  GUI_RESOURCES
+    StrangeAttractors.qrc 
+  GUI_INTERFACES 
+  SOURCES 
+  )
+  
 # For helper functions often used, will later include these in a single
 # VTK class.
 ADD_LIBRARY(AstroVizHelpers STATIC AstroVizHelpersLib/AstroVizHelpers.cxx)
@@ -124,16 +175,16 @@ TARGET_LINK_LIBRARIES(pv_astro AstroVizHelpers )
 
 # For the Tipsy reader plugin I use some of Doug Potter's Tipsy lib.
 ADD_LIBRARY(
-	TipsyHelpers
-	STATIC
-		tipsylib/adapter.cpp
-		tipsylib/binner.cpp 
-		tipsylib/ftipsy.cpp tipsylib/native.cpp 
-		tipsylib/standard.cpp
-		tipsylib/vtipsy.cpp
-	)
-	
-SET_TARGET_PROPERTIES(TipsyHelpers PROPERTIES COMPILE_FLAGS "-fPIC")	
+  TipsyHelpers
+  STATIC
+    tipsylib/adapter.cpp
+    tipsylib/binner.cpp 
+    tipsylib/ftipsy.cpp tipsylib/native.cpp 
+    tipsylib/standard.cpp
+    tipsylib/vtipsy.cpp
+  )
+  
+SET_TARGET_PROPERTIES(TipsyHelpers PROPERTIES COMPILE_FLAGS "-fPIC")  
 
 # add the winsock2 library for net lookup names
 IF (WIN32)
@@ -143,38 +194,38 @@ ENDIF (WIN32)
 
 # For SQLiteReader Plugin, SQLite lib
 ADD_LIBRARY(
-	SQLitelib
-	STATIC
-		sqlitelib/sqlite3.c
-	)
+  SQLitelib
+  STATIC
+    sqlitelib/sqlite3.c
+  )
 
 SET_TARGET_PROPERTIES(SQLitelib PROPERTIES COMPILE_FLAGS "-fPIC")
 #For the Grafic reader plugin (and later) integrated tipsy HDF, tipsy binary, and grafic reader I use some of Doug Potter's/Joachim Stadel's fio
 # For the Tipsy reader plugin I use some of Doug Potter's Tipsy lib.
 # TODO: this is not working, hardcoding library path for now
 IF (NOT WIN32)
-	ADD_LIBRARY(
-		fio
-		STATIC
-		fio/fio.c
-		fio/romberg.c
-	)
-	SET_TARGET_PROPERTIES(fio PROPERTIES LINKER_LANGUAGE C)
-	SET_TARGET_PROPERTIES(fio PROPERTIES COMPILE_FLAGS "-fPIC")
-        TARGET_LINK_LIBRARIES(pv_astro fio)
+  ADD_LIBRARY(
+    fio
+    STATIC
+    fio/fio.c
+    fio/romberg.c
+  )
+  SET_TARGET_PROPERTIES(fio PROPERTIES LINKER_LANGUAGE C)
+  SET_TARGET_PROPERTIES(fio PROPERTIES COMPILE_FLAGS "-fPIC")
+  TARGET_LINK_LIBRARIES(pv_astro fio)
 ENDIF (NOT WIN32)
 
 
 TARGET_LINK_LIBRARIES(
-	pv_astro
-	TipsyHelpers
-	SQLitelib
-	#gmp
-	)
+  pv_astro
+  TipsyHelpers
+  SQLitelib
+  #gmp
+  )
 #TARGET_LINK_LIBRARIES(pv_astro #/Users/corbett/Documents/Projects/pvaddons/ParaViz/ParaViz_src/fio/libFio.so)
 
 IF (NOT WIN32)
-	TARGET_LINK_LIBRARIES(pv_astro
-		fio
-	)
+  TARGET_LINK_LIBRARIES(pv_astro
+    fio
+  )
 ENDIF (NOT WIN32)
