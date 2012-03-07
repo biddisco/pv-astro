@@ -1,108 +1,143 @@
 <ServerManagerConfiguration>
   <ProxyGroup name="filters">
-   <SourceProxy name="Profile" class="vtkProfileFilter" label="Profile">
-     <Documentation
-        long_help="Calculates various physical quantities as a func-
-		       tion of radius. Fully parallel."
-        short_help="physical profile">
-     </Documentation>
-	<!--Sets the input dataset-->
-     <InputProperty name="Input" command="SetInputConnection">
-          <ProxyGroupDomain name="groups">
-            <Group name="sources"/>
-            <Group name="filters"/>
-          </ProxyGroupDomain>
-          <DataTypeDomain name="input_type">
-            <DataType value="vtkPointSet"/>
-          </DataTypeDomain>
-          <InputArrayDomain name="input_array">
-             <RequiredProperties>
-                <Property name="SelectInputArray" 
-                          function="FieldDataSelection"/>
-             </RequiredProperties>
-          </InputArrayDomain>
-          <Documentation>
-            This property specifies the input to the Profile filter.
-          </Documentation>
-     </InputProperty>
-     <InputProperty
-        name="Source"
-        command="SetSourceConnection"
-        label="Probe Type">
-           <ProxyGroupDomain name="groups">
-             <Group name="sources"/>
-           </ProxyGroupDomain>
-           <ProxyListDomain name="proxy_list">
-			 <Proxy group="extended_sources" name="HighResLineSource" />
-             <Proxy group="extended_sources" name="FixedRadiusPointSource" />
-           </ProxyListDomain>
-           <Documentation>
-			If HighResLineSource is selected: select line source, then in the 3D view define a line in space. Finds the particle with the lowest potential closest to this line. If there are ties, finds the particle closest to the center of mass. This is considered the center of the halo, from which the virial radius is searched outward. If Fixed Radius Point Source is selected, finds the particle with the lowest potential closest to the point. If more than one point is desired and a non-zero radius is specified, searches around this number of randomly sampled of points in the area of the sphere of the desired radius. Ties a broken again as the point closest in distance to the center of mass. If there are further ties, the point with the minimum x, then minimum y, then minimum z is selected.
-           </Documentation>
-		   <Hints>
-				<Property name="Radius" show="0"/>
-	        	<Property name="NumberOfPoints" show="0"/> 
-	    	</Hints>
+
+    <SourceProxy 
+      name="ProfileBase" 
+      class="vtkProfileFilter" 
+      label="Profile">
+      <Documentation
+         long_help="Calculates various physical quantities as a 
+         function of radius. Fully parallel."
+         short_help="physical profile">
+      </Documentation>
+      
+      <!--Sets the input dataset-->
+      <InputProperty name="Input" command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+          <Group name="filters"/>
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkPointSet"/>
+        </DataTypeDomain>
+        <InputArrayDomain name="input_array">
+          <RequiredProperties>
+            <Property name="SelectInputArray"
+                      function="FieldDataSelection"/>
+          </RequiredProperties>
+        </InputArrayDomain>
+        <Documentation>
+          This property specifies the input to the Profile filter.
+        </Documentation>
       </InputProperty>
-     <StringVectorProperty
-         name="SelectInputArray" 
-         command="SetInputArrayToProcess" 
-         number_of_elements="5" 
-         element_types="0 0 0 0 2" 
-         animateable="0"> 
-          <ArrayListDomain name="array_list" 
-                           attribute_type="Scalars">
-            <RequiredProperties>
-               <Property name="Input" function="Input"/>
-            </RequiredProperties>
-          </ArrayListDomain>
-          <FieldDataDomain name="field_list">
-            <RequiredProperties>
-               <Property name="Input" function="Input"/>
-            </RequiredProperties>
-          </FieldDataDomain>
-          <Documentation>
-			This property indicates which scalar array contains the mass of the particles.
-          </Documentation>
-     </StringVectorProperty>
-     <IntVectorProperty name="BinNumber" 
-        command="SetBinNumber" 
-        number_of_elements="1" 
-        default_values="30">
+
+      <StringVectorProperty
+          name="SelectInputArray"
+          command="SetInputArrayToProcess"
+          number_of_elements="5"
+          element_types="0 0 0 0 2"
+          animateable="0">
+        <ArrayListDomain name="array_list"
+                         attribute_type="Scalars">
+          <RequiredProperties>
+            <Property name="Input" function="Input"/>
+          </RequiredProperties>
+        </ArrayListDomain>
+        <FieldDataDomain name="field_list">
+          <RequiredProperties>
+            <Property name="Input" function="Input"/>
+          </RequiredProperties>
+        </FieldDataDomain>
+        <Documentation>
+          This property indicates which scalar array contains the mass of the particles.
+        </Documentation>
+      </StringVectorProperty>
+      <IntVectorProperty name="BinNumber"
+         command="SetBinNumber"
+         number_of_elements="1"
+         default_values="30">
         <IntRangeDomain name="range" min="1" max="256"/>
         <Documentation>
           The value of this property specifies the number of bins for the histogram.
         </Documentation>
-     </IntVectorProperty>
-     
-     <DoubleVectorProperty name="ProfileAxis" 
-       command="SetProfileAxis" 
-       number_of_elements="3" 
-       default_values="0 0 0">
-       <Documentation>
+      </IntVectorProperty>
 
-        If this is set to value other than 0,0,0 then a cylindrical profile instead of spherical profile is undertaken about the profile axis specified here.
-       </Documentation>
-     </DoubleVectorProperty>
+      <DoubleVectorProperty name="ProfileAxis"
+        command="SetProfileAxis"
+        number_of_elements="3"
+        default_values="0 0 0">
+        <Documentation>
 
-     
-     
-     <DoubleVectorProperty name="ProfileHeight" 
-       command="SetProfileHeight" 
-       number_of_elements="1" 
-       default_values="0">
-       <Documentation>
-         
-         If this is set to value other than 0, then all points beyond this radius are ignored for the spherical profile or above this height from the plane perpendicular to the normal vector are ignored for a cylindrical profile.
-       </Documentation>
-     </DoubleVectorProperty>
+          If this is set to value other than 0,0,0 then a cylindrical profile instead of spherical profile is undertaken about the profile axis specified here.
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty name="ProfileHeight"
+        command="SetProfileHeight"
+        number_of_elements="1"
+        default_values="0">
+        <Documentation>
+
+          If this is set to value other than 0, then all points beyond this radius are ignored for the spherical profile or above this height from the plane perpendicular to the normal vector are ignored for a cylindrical profile.
+        </Documentation>
+      </DoubleVectorProperty>
 
       <Hints>
-	  	<View type="SpreadSheetView" />
-      	<Visibility replace_input="0" />
-      <Plotable />
+        <View type="SpreadSheetView" />
+        <Visibility replace_input="0" />
+        <Plotable />
       </Hints>
-   </SourceProxy>
- </ProxyGroup>
+    </SourceProxy>
+
+    <SourceProxy
+      name="ProfileCustom"
+      class="vtkProfileFilter"
+      label="Profile (Custom source)"
+      base_proxygroup="filters"
+      base_proxyname="ProfileBase">
+
+      <InputProperty
+         name="Source"
+         command="SetSourceConnection"
+         label="Centre Of Profile">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+          <Group name="filters"/>
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkPointSet"/>
+        </DataTypeDomain>
+      </InputProperty>
+    </SourceProxy>
+
+    <SourceProxy
+      name="ProfileWidget"
+      class="vtkProfileFilter"
+      label="Profile (widget)"
+      base_proxygroup="filters"
+      base_proxyname="ProfileBase">
+
+      <InputProperty
+         name="Source"
+         command="SetSourceConnection"
+         label="Probe Type">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+        </ProxyGroupDomain>
+        <ProxyListDomain name="proxy_list">
+          <Proxy group="extended_sources" name="HighResLineSource" />
+          <Proxy group="extended_sources" name="FixedRadiusPointSource" />
+        </ProxyListDomain>
+        <Documentation>
+          If HighResLineSource is selected: select line source, then in the 3D view define a line in space. Finds the particle with the lowest potential closest to this line. If there are ties, finds the particle closest to the center of mass. This is considered the center of the halo, from which the virial radius is searched outward. If Fixed Radius Point Source is selected, finds the particle with the lowest potential closest to the point. If more than one point is desired and a non-zero radius is specified, searches around this number of randomly sampled of points in the area of the sphere of the desired radius. Ties a broken again as the point closest in distance to the center of mass. If there are further ties, the point with the minimum x, then minimum y, then minimum z is selected.
+        </Documentation>
+        <Hints>
+          <Property name="Radius" show="0"/>
+          <Property name="NumberOfPoints" show="0"/>
+        </Hints>
+      </InputProperty>
+    </SourceProxy>
+
+  </ProxyGroup>
 </ServerManagerConfiguration>
 
