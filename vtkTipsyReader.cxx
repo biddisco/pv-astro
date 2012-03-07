@@ -446,7 +446,7 @@ int vtkTipsyReader::RequestData(vtkInformation*,
 	// Next considering whether to read in a mark file, 
 	// and if so whether that reading was a success 
 	vtkstd::vector<unsigned long> markedParticleIndices;
-	if(strcmp(this->MarkFileName,"")!=0)
+	if(this->MarkFileName && strcmp(this->MarkFileName,"")!=0)
 		{
 		// Reading only marked particles
 		// Make sure we are not running in parallel, this filter does not work in 
