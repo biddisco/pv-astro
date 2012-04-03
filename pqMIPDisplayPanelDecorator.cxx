@@ -93,7 +93,7 @@ pqMIPDisplayPanelDecorator::pqMIPDisplayPanelDecorator(
   //
   // If the representation doesn't have this property, then it's not our MIP representation
   //
-  vtkSMProperty* prop = reprProxy->GetProperty("IntensityScalars");
+  vtkSMProperty* prop = reprProxy->GetProperty("ActiveScalars");
   if (!prop)  {
     return;
   }
@@ -109,40 +109,11 @@ pqMIPDisplayPanelDecorator::pqMIPDisplayPanelDecorator(
   this->Internals->PipelineRepresentation = qobject_cast<pqPipelineRepresentation*>(repr);
 
   //
-  // Intensity
-  //
-  prop = reprProxy->GetProperty("IntensityScalars");
-  pqFieldSelectionAdaptor* adaptor= new pqFieldSelectionAdaptor(
-    this->Internals->IntensityArray, prop);
-  this->Internals->Links.addPropertyLink(
-    adaptor, "attributeMode", SIGNAL(selectionChanged()),
-    reprProxy, prop, 3);
-  this->Internals->Links.addPropertyLink(
-    adaptor, "scalar", SIGNAL(selectionChanged()),
-    reprProxy, prop, 1);
-  reprProxy->GetProperty("Input")->UpdateDependentDomains();
-  prop->UpdateDependentDomains();
-
-  //
-  // Radius
-  //
-  prop = reprProxy->GetProperty("RadiusScalars");
-  adaptor = new pqFieldSelectionAdaptor(
-    this->Internals->RadiusArray, prop);
-  this->Internals->Links.addPropertyLink(
-    adaptor, "attributeMode", SIGNAL(selectionChanged()),
-    reprProxy, prop, 0);
-  this->Internals->Links.addPropertyLink(
-    adaptor, "scalar", SIGNAL(selectionChanged()),
-    reprProxy, prop, 1);
-  prop->UpdateDependentDomains();
-
-  //
   // Type
   //
   prop = reprProxy->GetProperty("TypeScalars");
-  adaptor = new pqFieldSelectionAdaptor(
-    this->Internals->TypeArray, prop);
+  pqFieldSelectionAdaptor* adaptor= new pqFieldSelectionAdaptor(
+    this->Internals->MIPTypeArray, prop);
   this->Internals->Links.addPropertyLink(
     adaptor, "attributeMode", SIGNAL(selectionChanged()),
     reprProxy, prop, 0);
@@ -156,7 +127,7 @@ pqMIPDisplayPanelDecorator::pqMIPDisplayPanelDecorator(
   //
   prop = reprProxy->GetProperty("ActiveScalars");
   adaptor = new pqFieldSelectionAdaptor(
-    this->Internals->ActiveArray, prop);
+    this->Internals->MIPActiveArray, prop);
   this->Internals->Links.addPropertyLink(
     adaptor, "attributeMode", SIGNAL(selectionChanged()),
     reprProxy, prop, 0);
@@ -179,25 +150,9 @@ pqMIPDisplayPanelDecorator::pqMIPDisplayPanelDecorator(
       vtkCommand::ModifiedEvent, this, SLOT(representationTypeChanged()));
 
   this->Internals->Links.addPropertyLink(
-    this->Internals->ActiveParticleType, "value", SIGNAL(valueChanged(int)),
-    reprProxy, reprProxy->GetProperty("ActiveParticleType"));
-
-  this->Internals->Links.addPropertyLink(
-    this->Internals->Brightness, "value", SIGNAL(valueChanged(int)),
-    reprProxy, reprProxy->GetProperty("Brightness"));
-  
-  this->Internals->Links.addPropertyLink(
-    this->Internals->LogIntensity, "checked", SIGNAL(toggled(bool)),
-    reprProxy, reprProxy->GetProperty("LogIntensity"));
-  
-  this->Internals->Links.addPropertyLink(
-    this->Internals->TypeActive, "checked", SIGNAL(toggled(bool)),
+    this->Internals->MIPTypeActive, "checked", SIGNAL(toggled(bool)),
     reprProxy, reprProxy->GetProperty("TypeActive"));
 
-  this->Internals->Links.addPropertyLink(
-    this->Internals->Gray, "value", SIGNAL(valueChanged(int)),
-    reprProxy, reprProxy->GetProperty("GrayAbsorption"));
-  
   //
   //
   //
@@ -212,16 +167,16 @@ pqMIPDisplayPanelDecorator::~pqMIPDisplayPanelDecorator()
 //-----------------------------------------------------------------------------
 void pqMIPDisplayPanelDecorator::setupGUIConnections()
 {
-  QObject::connect(this->Internals->EditColorMapButton, SIGNAL(clicked()), this,
+  QObject::connect(this->Internals->MIPEditColorMapButton, SIGNAL(clicked()), this,
       SLOT(EditColour()), Qt::QueuedConnection);
 
-  QObject::connect(this->Internals->RepaintButton, SIGNAL(clicked()), this,
+  QObject::connect(this->Internals->MIPRepaintButton, SIGNAL(clicked()), this,
       SLOT(RepaintClicked()), Qt::QueuedConnection);
 
-  QObject::connect(this->Internals->ActiveParticleType, SIGNAL(valueChanged(int)), this,
+  QObject::connect(this->Internals->MIPActiveParticleType, SIGNAL(valueChanged(int)), this,
       SLOT(ActiveParticleTypeChanged(int)), Qt::QueuedConnection);
 
-  QObject::connect(this->Internals->TypeArray, SIGNAL(currentIndexChanged(int)), this,
+  QObject::connect(this->Internals->MIPTypeArray, SIGNAL(currentIndexChanged(int)), this,
       SLOT(UpdateParticleTypes()), Qt::QueuedConnection);
   
 }
@@ -258,7 +213,7 @@ void pqMIPDisplayPanelDecorator::UpdateParticleTypes()
   vtkPVDataSetAttributesInformation *pointInfo = 
     dataInfo->GetPointDataInformation();
   vtkPVArrayInformation *arrayInfo = pointInfo->GetArrayInformation(
-    this->Internals->TypeArray->currentText().toAscii().data());
+    this->Internals->MIPTypeArray->currentText().toAscii().data());
   if (!arrayInfo) return;
   //
   QString valstr;
@@ -271,7 +226,7 @@ void pqMIPDisplayPanelDecorator::UpdateParticleTypes()
   else {
     valstr = QString::number(ntypes);
   }
-  this->Internals->ActiveParticleType->setMaximum(ntypes-1);
+  this->Internals->MIPActiveParticleType->setMaximum(ntypes-1);
   this->Internals->typeslabel->setText(valstr);
 }
 //-----------------------------------------------------------------------------
@@ -284,23 +239,10 @@ void pqMIPDisplayPanelDecorator::ActiveParticleTypeChanged(int v)
   QList<QVariant> ActiveParticleSettings = pqSMAdaptor::getMultipleElementProperty(SettingsProperty);
   //
   int ptype = ActiveParticleSettings.at(0).toString().toInt();
-  if (ptype==this->Internals->ActiveParticleType->value()) {
-    double brightness = ActiveParticleSettings.at(1).toString().toDouble();
-    this->Internals->Brightness->setValue(log10(brightness)*100);
-    //
-    bool logI = ActiveParticleSettings.at(2).toString().toInt();
-    this->Internals->LogIntensity->setChecked(logI);
-    //
-    int t = this->Internals->IntensityArray->findText(ActiveParticleSettings.at(3).toString());
-    if (t==-1) { t=0; }
-    this->Internals->IntensityArray->setCurrentIndex(t);
-    //
-    t = this->Internals->RadiusArray->findText(ActiveParticleSettings.at(4).toString());
-    if (t==-1) { t=0; }
-    this->Internals->RadiusArray->setCurrentIndex(t);
+  if (ptype==this->Internals->MIPActiveParticleType->value()) {
     //
     bool active = ActiveParticleSettings.at(5).toString().toInt();
-    this->Internals->TypeActive->setChecked(active);
+    this->Internals->MIPTypeActive->setChecked(active);
   }  
   for (int i=0; i<ActiveParticleSettings.size(); i++) {
     std::cout << ActiveParticleSettings.at(i).toString().toAscii().data() << std::endl;
