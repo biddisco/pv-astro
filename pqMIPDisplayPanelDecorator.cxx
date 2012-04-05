@@ -58,8 +58,7 @@
 #include "pqLookupTableManager.h"
 #include "pqApplicationCore.h"
 #include "pqCoreUtilities.h"
-
-// enum ElementTypes{ INT, DOUBLE, STRING };
+#include "pqComboBoxDomain.h"
 
 class pqMIPDisplayPanelDecorator::pqInternals: public Ui::pqMIPDisplayPanelDecorator
 {
@@ -78,6 +77,7 @@ public:
     this->Frame          = 0;
     this->TableIndex     = 0;
     this->RepresentationProxy = 0;
+    this->PipelineRepresentation = 0;
   }
 };
 
@@ -90,14 +90,6 @@ pqMIPDisplayPanelDecorator::pqMIPDisplayPanelDecorator(
   vtkSMProxy      *reprProxy  = (repr) ? repr->getProxy() : NULL;
   this->Internals             = NULL;
 
-  //
-  // If the representation doesn't have this property, then it's not our MIP representation
-  //
-  vtkSMProperty* prop = reprProxy->GetProperty("ActiveScalars");
-  if (!prop)  {
-    return;
-  }
-
   QWidget* wid = new QWidget(panel);
   this->Internals = new pqInternals(this);
   this->Internals->Frame = wid;
@@ -105,59 +97,14 @@ pqMIPDisplayPanelDecorator::pqMIPDisplayPanelDecorator(
   QVBoxLayout* l = qobject_cast<QVBoxLayout*>(panel->layout());
   l->addWidget(wid);
   //
-  this->Internals->RepresentationProxy = vtkSMPVRepresentationProxy::SafeDownCast(reprProxy);
-  this->Internals->PipelineRepresentation = qobject_cast<pqPipelineRepresentation*>(repr);
-
-  //
-  // Type
-  //
-  prop = reprProxy->GetProperty("TypeScalars");
-  pqFieldSelectionAdaptor* adaptor= new pqFieldSelectionAdaptor(
-    this->Internals->MIPTypeArray, prop);
-  this->Internals->Links.addPropertyLink(
-    adaptor, "attributeMode", SIGNAL(selectionChanged()),
-    reprProxy, prop, 0);
-  this->Internals->Links.addPropertyLink(
-    adaptor, "scalar", SIGNAL(selectionChanged()),
-    reprProxy, prop, 1);
-  prop->UpdateDependentDomains();
-
-  //
-  // Active
-  //
-  prop = reprProxy->GetProperty("ActiveScalars");
-  adaptor = new pqFieldSelectionAdaptor(
-    this->Internals->MIPActiveArray, prop);
-  this->Internals->Links.addPropertyLink(
-    adaptor, "attributeMode", SIGNAL(selectionChanged()),
-    reprProxy, prop, 0);
-  this->Internals->Links.addPropertyLink(
-    adaptor, "scalar", SIGNAL(selectionChanged()),
-    reprProxy, prop, 1);
-  prop->UpdateDependentDomains();
-
-  //
-  // Colour scalars display control
-  //
-//  this->Internals->ColorBy->setPropertyArrayName("ColorArrayName");
-//  this->Internals->ColorBy->setPropertyArrayComponent("ColorAttributeType");
-//  this->Internals->ColorBy->setRepresentation(this->Internals->PipelineRepresentation);
-  //
-  // 
-  //
-  this->Internals->VTKConnect->Connect(
-      this->Internals->RepresentationProxy->GetProperty("Representation"),
-      vtkCommand::ModifiedEvent, this, SLOT(representationTypeChanged()));
-
-  this->Internals->Links.addPropertyLink(
-    this->Internals->MIPTypeActive, "checked", SIGNAL(toggled(bool)),
-    reprProxy, reprProxy->GetProperty("TypeActive"));
-
+  this->setRepresentation(
+    static_cast<pqPipelineRepresentation*> (panel->getRepresentation()));
   //
   //
   //
   this->setupGUIConnections();
 }
+
 //-----------------------------------------------------------------------------
 pqMIPDisplayPanelDecorator::~pqMIPDisplayPanelDecorator()
 {
@@ -181,10 +128,69 @@ void pqMIPDisplayPanelDecorator::setupGUIConnections()
   
 }
 //-----------------------------------------------------------------------------
-void pqMIPDisplayPanelDecorator::setRepresentation(
-    pqPipelineRepresentation* repr)
+void pqMIPDisplayPanelDecorator::setRepresentation(pqPipelineRepresentation* repr)
 {
+  if (this->Internals->PipelineRepresentation == repr) {
+    return;
+  }
+
+  if (this->Internals->PipelineRepresentation) {
+    // break all old links.
+    this->Internals->Links.removeAllPropertyLinks();
+  }
+
   this->Internals->PipelineRepresentation = repr;
+  if (!repr) {
+//    this->Internals->TransferFunctionDialog->hide();
+    return;
+  }
+
+  vtkSMProperty* prop;
+  vtkSMProxy *reprProxy  = repr->getProxy();
+  this->Internals->RepresentationProxy = vtkSMPVRepresentationProxy::SafeDownCast(reprProxy);
+  reprProxy->GetProperty("Input")->UpdateDependentDomains();
+
+  //
+  // Field array controls
+  //
+  // Type
+  //
+  prop = reprProxy->GetProperty("MIPTypeScalars");
+  // adaptor from combo to property
+  pqSignalAdaptorComboBox *adaptor = new pqSignalAdaptorComboBox(this->Internals->MIPTypeArray);
+  // domain to control the combo contents
+  new pqComboBoxDomain(this->Internals->MIPTypeArray, prop, "array_list");
+  // link gui changes to property and vice versa
+  this->Internals->Links.addPropertyLink(adaptor, "currentText", SIGNAL(currentTextChanged(const QString&)), reprProxy, prop);
+  prop->UpdateDependentDomains();
+
+  //
+  // Active
+  //
+  prop = reprProxy->GetProperty("MIPActiveScalars");
+  // adaptor from combo to property
+  adaptor = new pqSignalAdaptorComboBox(this->Internals->MIPActiveArray);
+  // domain to control the combo contents
+  new pqComboBoxDomain(this->Internals->MIPActiveArray, prop, "array_list");
+  // link gui changes to property and vice versa
+  this->Internals->Links.addPropertyLink(adaptor, "currentText", SIGNAL(currentTextChanged(const QString&)), reprProxy, prop);
+  prop->UpdateDependentDomains();
+
+  //
+  // 
+  //
+  this->Internals->VTKConnect->Connect(
+      this->Internals->RepresentationProxy->GetProperty("Representation"),
+      vtkCommand::ModifiedEvent, this, SLOT(representationTypeChanged()));
+
+  this->Internals->Links.addPropertyLink(
+    this->Internals->MIPTypeActive, "checked", SIGNAL(toggled(bool)),
+    reprProxy, reprProxy->GetProperty("TypeActive"));
+
+  //
+  //
+  //
+  this->setupGUIConnections();
 }
 //-----------------------------------------------------------------------------
 void pqMIPDisplayPanelDecorator::representationTypeChanged()
@@ -234,14 +240,14 @@ void pqMIPDisplayPanelDecorator::ActiveParticleTypeChanged(int v)
 {
   this->Internals->TableIndex = v;
   //
-  vtkSMProperty* SettingsProperty = this->Internals->RepresentationProxy->GetProperty("ActiveParticleSettings");
+  vtkSMProperty* SettingsProperty = this->Internals->RepresentationProxy->GetProperty("MIPActiveParticleSettings");
   this->Internals->RepresentationProxy->UpdatePropertyInformation(SettingsProperty);
   QList<QVariant> ActiveParticleSettings = pqSMAdaptor::getMultipleElementProperty(SettingsProperty);
   //
   int ptype = ActiveParticleSettings.at(0).toString().toInt();
   if (ptype==this->Internals->MIPActiveParticleType->value()) {
     //
-    bool active = ActiveParticleSettings.at(5).toString().toInt();
+    bool active = ActiveParticleSettings.at(1).toString().toInt();
     this->Internals->MIPTypeActive->setChecked(active);
   }  
   for (int i=0; i<ActiveParticleSettings.size(); i++) {
