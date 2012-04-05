@@ -94,7 +94,7 @@ int vtkProfileFilter::RequestData(vtkInformation *request,
     }
   else
     {
-      vtkErrorMacro("no conversion factor");
+      vtkWarningMacro("no conversion factor");
     }
 
 
