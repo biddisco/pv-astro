@@ -100,9 +100,9 @@ pqMIPDisplayPanelDecorator::pqMIPDisplayPanelDecorator(
   this->setRepresentation(
     static_cast<pqPipelineRepresentation*> (panel->getRepresentation()));
   //
-  //
-  //
   this->setupGUIConnections();
+  //
+  this->UpdateParticleTypes();
 }
 
 //-----------------------------------------------------------------------------
