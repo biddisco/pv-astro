@@ -65,8 +65,9 @@ ENDIF (NOT WIN32)
 # Files for MIP that must be wrapped in client server
 #--------------------------------------------------
 SET( mip_WRAPPED_SRCS
-  vtkMIPMapper.cxx
   vtkMIPRepresentation.cxx
+  vtkMIPPainterPolyDataMapper.cxx
+  vtkMIPPainter.cxx
 )
 
 #--------------------------------------------------
