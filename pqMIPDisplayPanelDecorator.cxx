@@ -156,41 +156,48 @@ void pqMIPDisplayPanelDecorator::setRepresentation(pqPipelineRepresentation* rep
   // Type
   //
   prop = reprProxy->GetProperty("MIPTypeScalars");
-  // adaptor from combo to property
-  pqSignalAdaptorComboBox *adaptor = new pqSignalAdaptorComboBox(this->Internals->MIPTypeArray);
-  // domain to control the combo contents
-  new pqComboBoxDomain(this->Internals->MIPTypeArray, prop, "array_list");
-  // link gui changes to property and vice versa
-  this->Internals->Links.addPropertyLink(adaptor, "currentText", SIGNAL(currentTextChanged(const QString&)), reprProxy, prop);
-  prop->UpdateDependentDomains();
 
+  // Some representations are not compatible with our mapper, jump out before segfaults occur
   //
-  // Active
-  //
-  prop = reprProxy->GetProperty("MIPActiveScalars");
-  // adaptor from combo to property
-  adaptor = new pqSignalAdaptorComboBox(this->Internals->MIPActiveArray);
-  // domain to control the combo contents
-  new pqComboBoxDomain(this->Internals->MIPActiveArray, prop, "array_list");
-  // link gui changes to property and vice versa
-  this->Internals->Links.addPropertyLink(adaptor, "currentText", SIGNAL(currentTextChanged(const QString&)), reprProxy, prop);
-  prop->UpdateDependentDomains();
+  if (prop) {
 
-  //
-  // 
-  //
-  this->Internals->VTKConnect->Connect(
-      this->Internals->RepresentationProxy->GetProperty("Representation"),
-      vtkCommand::ModifiedEvent, this, SLOT(representationTypeChanged()));
+    // adaptor from combo to property
+    pqSignalAdaptorComboBox *adaptor = new pqSignalAdaptorComboBox(this->Internals->MIPTypeArray);
+    // domain to control the combo contents
+    new pqComboBoxDomain(this->Internals->MIPTypeArray, prop, "array_list");
+    // link gui changes to property and vice versa
+    this->Internals->Links.addPropertyLink(adaptor, "currentText", SIGNAL(currentTextChanged(const QString&)), reprProxy, prop);
+    prop->UpdateDependentDomains();
 
-  this->Internals->Links.addPropertyLink(
-    this->Internals->MIPTypeActive, "checked", SIGNAL(toggled(bool)),
-    reprProxy, reprProxy->GetProperty("TypeActive"));
+    //
+    // Active
+    //
+    prop = reprProxy->GetProperty("MIPActiveScalars");
+    // adaptor from combo to property
+    adaptor = new pqSignalAdaptorComboBox(this->Internals->MIPActiveArray);
+    // domain to control the combo contents
+    new pqComboBoxDomain(this->Internals->MIPActiveArray, prop, "array_list");
+    // link gui changes to property and vice versa
+    this->Internals->Links.addPropertyLink(adaptor, "currentText", SIGNAL(currentTextChanged(const QString&)), reprProxy, prop);
+    prop->UpdateDependentDomains();
 
-  //
-  //
-  //
-  this->setupGUIConnections();
+    //
+    // 
+    //
+    this->Internals->VTKConnect->Connect(
+        this->Internals->RepresentationProxy->GetProperty("Representation"),
+        vtkCommand::ModifiedEvent, this, SLOT(representationTypeChanged()));
+
+    this->Internals->Links.addPropertyLink(
+      this->Internals->MIPTypeActive, "checked", SIGNAL(toggled(bool)),
+      reprProxy, reprProxy->GetProperty("TypeActive"));
+
+    //
+    //
+    //
+    this->setupGUIConnections();
+  }
+  this->representationTypeChanged();
 }
 //-----------------------------------------------------------------------------
 void pqMIPDisplayPanelDecorator::representationTypeChanged()
