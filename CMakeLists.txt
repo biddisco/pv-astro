@@ -13,6 +13,12 @@ IF (VTK_USE_MPI)
   ADD_DEFINITIONS(-DUSE_MPI)
 ENDIF (VTK_USE_MPI)
 
+#
+# For the MIP Painter we need access to some IceT viewport info
+# It's awful, but there's no other way to get the image reduction factor
+#
+INCLUDE_DIRECTORIES(${ParaView_BINARY_DIR}/Utilities/IceT/src/include)
+
 ###############
 # pv_astro plugin
 # INCLUDES
@@ -65,8 +71,8 @@ ENDIF (NOT WIN32)
 # Files for MIP that must be wrapped in client server
 #--------------------------------------------------
 SET( mip_WRAPPED_SRCS
-  vtkMIPRepresentation.cxx
-  vtkMIPPainterPolyDataMapper.cxx
+  vtkMIPRepresentation.cxx  
+  vtkMIPDefaultPainter.cxx
   vtkMIPPainter.cxx
 )
 
