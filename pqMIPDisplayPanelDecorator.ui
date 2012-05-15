@@ -1,44 +1,73 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>pqMIPDisplayPanelDecorator</class>
- <widget class="QWidget" name="pqMIPDisplayPanelDecorator">
+ <widget class="QGroupBox" name="pqMIPDisplayPanelDecorator">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>268</width>
-    <height>338</height>
+    <width>270</width>
+    <height>419</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>MIP Controls</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout_3">
-   <item row="14" column="0" colspan="2">
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
+  <property name="title">
+   <string>MIP Controls</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <item row="0" column="0">
+    <widget class="QLabel" name="TypeArrayLabel">
+     <property name="text">
+      <string>Type</string>
      </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>0</height>
-      </size>
-     </property>
-    </spacer>
+    </widget>
    </item>
-   <item row="11" column="0" colspan="2">
-    <widget class="QPushButton" name="MIPRepaintButton">
+   <item row="0" column="1">
+    <widget class="QComboBox" name="MIPTypeArray">
      <property name="sizePolicy">
-      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+      <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <widget class="QLabel" name="ActiveArrayLabel">
      <property name="text">
-      <string>Repaint</string>
+      <string>Active</string>
      </property>
     </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="QComboBox" name="MIPActiveArray">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0" colspan="2">
+    <layout class="QHBoxLayout" name="horizontalLayout_4">
+     <item>
+      <widget class="QLabel" name="label_5">
+       <property name="text">
+        <string>Particle types available : </string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="typeslabel">
+       <property name="text">
+        <string>(none)</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
    <item row="3" column="0" colspan="2">
     <widget class="QGroupBox" name="groupBox">
@@ -114,57 +143,31 @@
      </layout>
     </widget>
    </item>
-   <item row="0" column="0">
-    <widget class="QLabel" name="TypeArrayLabel">
-     <property name="text">
-      <string>Type</string>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="1">
-    <widget class="QComboBox" name="MIPTypeArray">
+   <item row="4" column="0" colspan="2">
+    <widget class="QPushButton" name="MIPRepaintButton">
      <property name="sizePolicy">
-      <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
-    </widget>
-   </item>
-   <item row="1" column="1">
-    <widget class="QComboBox" name="MIPActiveArray">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="0">
-    <widget class="QLabel" name="ActiveArrayLabel">
      <property name="text">
-      <string>Active</string>
+      <string>Repaint</string>
      </property>
     </widget>
    </item>
-   <item row="2" column="0" colspan="2">
-    <layout class="QHBoxLayout" name="horizontalLayout_4">
-     <item>
-      <widget class="QLabel" name="label_5">
-       <property name="text">
-        <string>Particle types available : </string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="typeslabel">
-       <property name="text">
-        <string>(none)</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
+   <item row="5" column="0" colspan="2">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>247</width>
+       <height>185</height>
+      </size>
+     </property>
+    </spacer>
    </item>
   </layout>
  </widget>

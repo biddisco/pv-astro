@@ -90,7 +90,7 @@ pqMIPDisplayPanelDecorator::pqMIPDisplayPanelDecorator(
   vtkSMProxy      *reprProxy  = (repr) ? repr->getProxy() : NULL;
   this->Internals             = NULL;
 
-  QWidget* wid = new QWidget(panel);
+  QGroupBox* wid = new QGroupBox(panel);
   this->Internals = new pqInternals(this);
   this->Internals->Frame = wid;
   this->Internals->setupUi(wid);
