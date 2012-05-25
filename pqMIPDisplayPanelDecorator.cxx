@@ -202,7 +202,7 @@ void pqMIPDisplayPanelDecorator::setRepresentation(pqPipelineRepresentation* rep
 //-----------------------------------------------------------------------------
 void pqMIPDisplayPanelDecorator::representationTypeChanged()
 {
-  if (this->Internals) {
+  if (this->Internals && this->Internals->RepresentationProxy) {
     const char* reprType = vtkSMPropertyHelper
         ( this->Internals->RepresentationProxy, "Representation" ).GetAsString();
     if ( strcmp(  reprType, "MIP (particles)"  ) == 0 ) {
