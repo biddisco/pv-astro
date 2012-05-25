@@ -67,6 +67,20 @@ IF (NOT WIN32)
   )
 ENDIF (NOT WIN32)
 
+  #-----------------------------------------------------------------------------
+  # OpenMP
+  #-----------------------------------------------------------------------------
+  OPTION(ASTRO_USE_OPENMP "Compile with OpenMP support" ON)
+  IF (ASTRO_USE_OPENMP)
+    ADD_DEFINITIONS(-DHAVE_OPENMP)
+    IF (WIN32 AND MSVC) 
+      SET(OpenMP_CXX_FLAGS "/openmp")
+    ENDIF (WIN32 AND MSVC) 
+    if (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC)
+      SET(OpenMP_CXX_FLAGS "-fopenmp" )
+    endif (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC)
+  ENDIF (ASTRO_USE_OPENMP)
+
 #--------------------------------------------------
 # Files for MIP that must be wrapped in client server
 #--------------------------------------------------
@@ -179,6 +193,7 @@ ADD_LIBRARY(AstroVizHelpers STATIC AstroVizHelpersLib/AstroVizHelpers.cxx)
 SET_TARGET_PROPERTIES(AstroVizHelpers PROPERTIES COMPILE_FLAGS "-fPIC")
 TARGET_LINK_LIBRARIES(AstroVizHelpers vtkParallel)
 TARGET_LINK_LIBRARIES(pv_astro AstroVizHelpers ) 
+SET_TARGET_PROPERTIES(pv_astro PROPERTIES COMPILE_FLAGS "${OpenMP_CXX_FLAGS}")
 
 # For the Tipsy reader plugin I use some of Doug Potter's Tipsy lib.
 ADD_LIBRARY(
