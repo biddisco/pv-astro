@@ -2893,12 +2893,11 @@ static int graficReadDark(FIO fio,
     assert(fio->eFormat == FIO_FORMAT_GRAFIC);
     assert(gio->iOrder >= gio->fio.nSpecies[FIO_SPECIES_SPH]);
     *piOrder = gio->iOrder++;
-		if(gio->level[0].fp_refmap.fp!=NULL){
-			double includeParticle=graficRead(&gio->level[0].fp_refmap);
-			if(!includeParticle){
-				return 0;
-			}
-		}			
+    double includeParticle=1;
+    if(gio->level[0].fp_refmap.fp!=NULL){
+      includeParticle=graficRead(&gio->level[0].fp_refmap);
+    }
+			
 	
     graficSetPV(fio,pdPos,pdVel,
 		graficRead(&gio->level[0].fp_velcx),
@@ -2907,7 +2906,7 @@ static int graficReadDark(FIO fio,
     *pfMass = gio->mValueCDM;
     *pfSoft = gio->sValue;
     if ( pfPot) *pfPot = 0.0;
-    return 1;
+    return includeParticle;
     }
 
 static int graficReadSph(
@@ -2918,6 +2917,11 @@ static int graficReadSph(
     assert(fio->eFormat == FIO_FORMAT_GRAFIC);
     assert(gio->iOrder < gio->fio.nSpecies[FIO_SPECIES_SPH]);
     *piOrder = gio->iOrder++;
+    double includeParticle=1;
+    if(gio->level[0].fp_refmap.fp!=NULL){
+      includeParticle=graficRead(&gio->level[0].fp_refmap);
+    }
+
     graficSetPV(fio,pdPos,pdVel,
 		graficRead(&gio->level[0].fp_velbx),
 		graficRead(&gio->level[0].fp_velby),
@@ -2929,7 +2933,7 @@ static int graficReadSph(
     if (pfTemp) *pfTemp = 0.0;
     if (pfSoft) *pfSoft = 0.0;
     if (pfMetals) *pfMetals = 0.0;
-    return 1;
+    return includeParticle;
     }
 
 static void graficClose(FIO fio) {

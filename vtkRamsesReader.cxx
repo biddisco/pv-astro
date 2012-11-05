@@ -12,6 +12,7 @@
 #include "vtkCellArray.h"
 #include "vtkDoubleArray.h" 
 #include "vtkIntArray.h"
+#include "AstroVizHelpersLib/AstroVizHelpers.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkDistributedDataFilter.h"
 #include "vtkMultiProcessController.h"
@@ -20,6 +21,7 @@
 #include "vtkSmartPointer.h"
 #include "vtkDataArraySelection.h"
 #include "vtkMultiProcessController.h"
+#include "vtkInformationDoubleKey.h"
 #include <time.h>
 #include <cmath>
 #include <assert.h>
@@ -41,7 +43,7 @@
 
 vtkCxxRevisionMacro(vtkRamsesReader, "$Revision: 1.0 $");
 vtkStandardNewMacro(vtkRamsesReader);
-
+vtkInformationKeyMacro(vtkRamsesReader,VCIRC_CONVERSION,Double);
 //... define the RAMSES base cell type to be of cell_locally_essential type
 //... - this type allows moving between refinement levels
 typedef RAMSES::AMR::cell_locally_essential<> RAMSES_cell;
@@ -56,6 +58,7 @@ typedef RAMSES::PART::multi_domain_data< RAMSES_tree, double > multi_part;
 typedef RAMSES::PART::multi_domain_data< RAMSES_tree, int > multi_part_int; 
 
 
+<<<<<<< HEAD
 // CGS units needed // TODO: put these in a header file
 float kpcInCm=3.08568025*pow(10,21);
 float pcInCm=3.08568025* pow(10,18);
@@ -64,6 +67,8 @@ float GyrInS=3.1536*pow(10,16);
 float yrInS=3.1553*pow(10,7);
 float msolInG=1.98892*pow(10,33);
 
+=======
+>>>>>>> aa025213280c2565323c38efd35976db026f1b69
 // if convert units is set to true we
 // * Converting coordinates from simulation units to kpc
 // * Converting velocities from simulation units to km/s
@@ -116,6 +121,7 @@ vtkRamsesReader::vtkRamsesReader()
   this->Vertices      = NULL;
   this->GlobalIds     = NULL;
   this->ParticleIndex = 0;
+<<<<<<< HEAD
   this->Potential   = NULL;
   this->Mass        = NULL;
   this->EPS         = NULL;
@@ -128,6 +134,21 @@ vtkRamsesReader::vtkRamsesReader()
   this->Controller = NULL;
   this->ConvertUnits = false; 
   this->Controller=vtkMultiProcessController::GetGlobalController();
+=======
+  this->Potential     = NULL;
+  this->Mass          = NULL;
+  this->EPS           = NULL;
+  this->RHO           = NULL;
+  this->Hsmooth       = NULL;
+  this->Temperature   = NULL;
+  this->Metals        = NULL;
+  this->Tform         = NULL;
+  this->Velocity      = NULL;
+  this->ConvertUnits    = false; 
+  this->ReadHeaderOnly = false;
+  this->Controller    = NULL;
+  this->Controller    = vtkMultiProcessController::GetGlobalController();
+>>>>>>> aa025213280c2565323c38efd35976db026f1b69
   
   this->TimeStep    = 0;
   this->TimeStepTolerance = 1E-6;
@@ -232,10 +253,11 @@ int vtkRamsesReader::RequestInformation(
 	vtkInformationVector** vtkNotUsed(inputVector),
 	vtkInformationVector* outputVector)
 {
-	vtkInformation* outInfo = outputVector->GetInformationObject(0);
+  vtkInformation* outInfo = outputVector->GetInformationObject(0);
 	// means that the data set can be divided into an arbitrary number of pieces
-	outInfo->Set(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(),
-		-1);
+  outInfo->Set(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(),
+	       -1);
+
 
   this->PointDataArraySelection->AddArray("Potential");
   this->PointDataArraySelection->AddArray("Mass");
@@ -258,8 +280,10 @@ int vtkRamsesReader::RequestInformation(
   while (infile.good()) {
     infile >> pattern;
     std::string newname = vtksys::SystemTools::GetFilenamePath(this->FileName) + "/" + pattern;
-    this->Filenames.push_back(newname);
-    this->TimeStepValues.push_back(i++);
+    if (infile.good() && vtksys::SystemTools::FileExists(this->FileName)) {
+      this->Filenames.push_back(newname);
+      this->TimeStepValues.push_back(i++);
+    }
   }
 
   outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(),
@@ -299,12 +323,12 @@ public:
 * 	 attribute into a data array, reading only those marked if necessary.
 */
 //----------------------------------------------------------------------------
-int vtkRamsesReader::RequestData(vtkInformation*,
+int vtkRamsesReader::RequestData(vtkInformation* req,
 	vtkInformationVector**,vtkInformationVector* outputVector)
 {
 
   //
-	// Make sure we have a file to read.
+  // Make sure we have a file to read.
   //
   if(!this->FileName || this->Filenames.size()==0)
 	  {
@@ -312,10 +336,13 @@ int vtkRamsesReader::RequestData(vtkInformation*,
     return 0;
     }
 
-	// TODO: Open the Ramses standard file and abort if there is an error.
-	// Get output information
-	vtkInformation* outInfo = outputVector->GetInformationObject(0);
+  // TODO: Open the Ramses standard file and abort if there is an error.
+  // Get output information
+  vtkInformation* outInfo = outputVector->GetInformationObject(0);
     // get this->UpdatePiece information
+  outInfo->Set(vtkRamsesReader::VCIRC_CONVERSION(),2.0);
+
+  req->Append(vtkExecutive::KEYS_TO_COPY(),vtkRamsesReader::VCIRC_CONVERSION());
 
   // get the output polydata
   vtkPolyData *output = 
@@ -368,9 +395,6 @@ int vtkRamsesReader::RequestData(vtkInformation*,
 	vtkDebugMacro("simulation has " << rsnap.m_header.ncpu << " domains");
 
 
-  
-  
-
   vtkSmartPointer<vtkPolyData> RamsesReadInitialOutput = \
       vtkSmartPointer<vtkPolyData>::New();  
 	int mympirank=vtkMultiProcessController::GetGlobalController()->GetLocalProcessId();
@@ -381,10 +405,6 @@ int vtkRamsesReader::RequestData(vtkInformation*,
    */
   
   vtkFieldData* fd = vtkFieldData::New();
-
-
-
-  
  
   vtkIntArray* nCpuArray = vtkIntArray::New();
   nCpuArray->SetName("ncpu");  
@@ -406,18 +426,15 @@ int vtkRamsesReader::RequestData(vtkInformation*,
   levelMinArray->InsertNextValue(rsnap.m_header.levelmin);
   fd->AddArray(levelMinArray);
 
-  
   vtkIntArray* ngridMaxArray = vtkIntArray::New();
   ngridMaxArray->SetName("ngridmax");
   ngridMaxArray->InsertNextValue((int)rsnap.m_header.ngridmax);
   fd->AddArray(ngridMaxArray);
 
-  
   vtkIntArray* nstepcoarseArray = vtkIntArray::New();
   nstepcoarseArray->SetName("nstep_coarse");
   nstepcoarseArray->InsertNextValue(rsnap.m_header.nstep_coarse);
   fd->AddArray(nstepcoarseArray);
-  
   
   vtkDoubleArray* h0Array = vtkDoubleArray::New();
   h0Array->SetName("h0");
@@ -450,12 +467,10 @@ int vtkRamsesReader::RequestData(vtkInformation*,
   omega_lArray->InsertNextValue(rsnap.m_header.omega_l);
   fd->AddArray(omega_lArray);
 
-  
   vtkDoubleArray* omega_mArray = vtkDoubleArray::New();
   omega_mArray->SetName("omega_m");
   omega_mArray->InsertNextValue(rsnap.m_header.omega_m);
   fd->AddArray(omega_mArray);
-  
   
   vtkDoubleArray* unit_dArray = vtkDoubleArray::New();
   unit_dArray->SetName("unit_d");
@@ -472,13 +487,13 @@ int vtkRamsesReader::RequestData(vtkInformation*,
   unit_tArray->InsertNextValue(rsnap.m_header.unit_t);
   fd->AddArray(unit_tArray);
 
-  
   vtkDoubleArray* timeArray = vtkDoubleArray::New();
   timeArray->SetName("time");
   timeArray->InsertNextValue(rsnap.m_header.time);
   fd->AddArray(timeArray);
   
-  
+  float timeOfSnapshot = rsnap.m_header.time*rsnap.m_header.unit_t/GyrInS;
+
   output->SetFieldData(fd);
   
   nCpuArray->Delete();
@@ -501,6 +516,9 @@ int vtkRamsesReader::RequestData(vtkInformation*,
 
   fd->Delete();
 
+   if (this->ReadHeaderOnly) {
+      return 1;
+   }
   
   //... distribute the domain among the available MPI tasks
   //... each task will have to deal with the domains stored in the 'mycpus' array inside compound_data

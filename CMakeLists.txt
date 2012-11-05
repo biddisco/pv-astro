@@ -90,7 +90,7 @@ ADD_PARAVIEW_PLUGIN(pv_astro "1.1"
 
 	GUI_RESOURCES
 		TipsyReader.qrc
-        SQLiteReader.qrc
+        	SQLiteReader.qrc
 		RamsesReader.qrc
 		#GadgetReader.qrc
 		GraficReader.qrc		
@@ -103,16 +103,16 @@ ADD_PARAVIEW_PLUGIN(pv_astro "1.1"
 #PARAVIEW_INCLUDE_WRAPPED_SOURCES(fio/fio.c fio/romberg.c)
 #Defines the StrangeAttractors plugin
 
-#ADD_PARAVIEW_PLUGIN(StrangeAttractorsPlugin "1.0"
-#	SERVER_MANAGER_SOURCES 
-#		vtkStrangeAttractors.cxx
-#	SERVER_MANAGER_XML
-#		StrangeAttractorsSM.xml
-#	GUI_RESOURCES
-#		StrangeAttractors.qrc 
-#	GUI_INTERFACES ${IFACES} 
-#	SOURCES ${MOC_SRCS} ${IFACE_SRCS}
-#	)
+ADD_PARAVIEW_PLUGIN(StrangeAttractorsPlugin "1.0"
+	SERVER_MANAGER_SOURCES 
+		vtkStrangeAttractors.cxx
+	SERVER_MANAGER_XML
+		StrangeAttractorsSM.xml
+	GUI_RESOURCES
+		StrangeAttractors.qrc 
+	GUI_INTERFACES 
+	SOURCES 
+	)
 	
 # For helper functions often used, will later include these in a single
 # VTK class.
@@ -148,6 +148,7 @@ ADD_LIBRARY(
 		sqlitelib/sqlite3.c
 	)
 
+SET_TARGET_PROPERTIES(SQLitelib PROPERTIES COMPILE_FLAGS "-fPIC")
 #For the Grafic reader plugin (and later) integrated tipsy HDF, tipsy binary, and grafic reader I use some of Doug Potter's/Joachim Stadel's fio
 # For the Tipsy reader plugin I use some of Doug Potter's Tipsy lib.
 # TODO: this is not working, hardcoding library path for now
@@ -165,3 +166,16 @@ IF (NOT WIN32)
 ENDIF (NOT WIN32)
 
 
+TARGET_LINK_LIBRARIES(
+	pv_astro
+	TipsyHelpers
+	SQLitelib
+	#gmp
+	)
+#TARGET_LINK_LIBRARIES(pv_astro #/Users/corbett/Documents/Projects/pvaddons/ParaViz/ParaViz_src/fio/libFio.so)
+
+IF (NOT WIN32)
+	TARGET_LINK_LIBRARIES(pv_astro
+		fio
+	)
+ENDIF (NOT WIN32)

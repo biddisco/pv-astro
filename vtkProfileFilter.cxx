@@ -23,9 +23,9 @@
 #include "vtkLine.h"
 #include "vtkPlane.h"
 #include "vtkTimerLog.h"
-#include <cmath>
+#include "vtkRamsesReader.h"
 #include <algorithm>
-using vtkstd::string;
+
 
 vtkCxxRevisionMacro(vtkProfileFilter, "$Revision: 1.72 $");
 vtkStandardNewMacro(vtkProfileFilter);
@@ -83,6 +83,20 @@ int vtkProfileFilter::RequestData(vtkInformation *request,
 {
   vtkSmartPointer<vtkTimerLog> timer = vtkSmartPointer<vtkTimerLog>::New();
   timer->StartTimer();
+
+
+  vtkInformation* outInfo = outputVector->GetInformationObject(0);
+  vtkInformation* inInfo = inputVector[0]->GetInformationObject(0);
+  if(inInfo->Has(vtkRamsesReader::VCIRC_CONVERSION()))
+    {
+      vtkErrorMacro("we have a vcirc conversion factor! " << inInfo->Get(vtkRamsesReader::VCIRC_CONVERSION()));
+     
+    }
+  else
+    {
+      vtkErrorMacro("no conversion factor");
+    }
+
 
   // Get the input with which we want to work
   vtkPointSet* input = vtkPointSet::GetData(inputVector[0]);
@@ -387,6 +401,8 @@ void vtkProfileFilter::MergeTables(vtkPointSet* input,
 void vtkProfileFilter::SetBoundsAndBinExtents(vtkPointSet* input, 
   vtkDataSet* source)
 {
+
+
   if(RunInParallel(this->Controller))
     {
     int procId=this->Controller->GetLocalProcessId();
@@ -412,6 +428,11 @@ void vtkProfileFilter::SetBoundsAndBinExtents(vtkPointSet* input,
     source->GetCenter(this->Center);
     //calculating the the max R
     this->MaxR=ComputeMaxR(input,this->Center);      
+    }
+  if(this->ProfileHeight!=0) 
+    {
+      // leaving the computation of the box bounds in case we need it
+      this->MaxR=this->ProfileHeight;
     }
   // this->MaxR, this->BinNumber are already set/synced
   // whether we are in parallel or serial, and each process can perform

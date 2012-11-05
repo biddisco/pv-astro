@@ -33,6 +33,7 @@ class vtkPoints;
 class vtkCellArray;
 class vtkDataArraySelection;
 class vtkMultiProcessController;
+class vtkInformationDoubleKey;
 
 // use this command to generate a time series info file.
 // Must be done from the ramses output dir where all the time series dirs are
@@ -53,6 +54,11 @@ public:
   static vtkRamsesReader* New();
   vtkTypeRevisionMacro(vtkRamsesReader,vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
+
+  // gives the vcircconversion factor for profile or downstream computation, if necessary
+  static vtkInformationDoubleKey* VCIRC_CONVERSION();
+
+
   // Description:
   // Set/Get the name of the file from which to read points.
 	vtkSetStringMacro(FileName);
@@ -74,6 +80,16 @@ public:
   // Set/Get whether we should convert units
 	vtkSetMacro(ConvertUnits,bool);
  	vtkGetMacro(ConvertUnits,bool);
+<<<<<<< HEAD
+=======
+	
+  // Description:
+  // Set/Get a special flag that tells the reader to not read any data, only
+  // to extract the simulation time. This can be used to iterate over a list 
+  // of files and generate the correct time information for animations etc.
+	vtkSetMacro(ReadHeaderOnly,bool);
+ 	vtkGetMacro(ReadHeaderOnly,bool);
+>>>>>>> aa025213280c2565323c38efd35976db026f1b69
 	
 	// Description:
   // An H5Part file may contain multiple arrays
@@ -109,6 +125,10 @@ protected:
 	double ParticleMassGuess;
 	bool HasParticleData;
   bool ConvertUnits;
+<<<<<<< HEAD
+=======
+  int  ReadHeaderOnly;
+>>>>>>> aa025213280c2565323c38efd35976db026f1b69
 	int RequestInformation(vtkInformation*,	vtkInformationVector**,
 		vtkInformationVector*);
 

@@ -1,5 +1,0 @@
-<RCC>
-	<qresource prefix="/ParaViewResources">
-		<file>PointDisplayGUI.xml</file>
-	</qresource>
-</RCC>

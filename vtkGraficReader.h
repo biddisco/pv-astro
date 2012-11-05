@@ -72,13 +72,14 @@ protected:
   vtkSmartPointer<vtkDoubleArray>   Velocity;
 	
   vtkSmartPointer<vtkFloatArray>   Mass;
-	vtkSmartPointer<vtkFloatArray>   EPS;
-	vtkSmartPointer<vtkFloatArray>   Potential;
+  vtkSmartPointer<vtkFloatArray>   EPS;
+  vtkSmartPointer<vtkFloatArray>   Potential;
   vtkSmartPointer<vtkFloatArray>   RHO;
   vtkSmartPointer<vtkFloatArray>   Temperature;
   vtkSmartPointer<vtkFloatArray>   Metals;
   vtkSmartPointer<vtkFloatArray>   Tform;
-	vtkSmartPointer<vtkIntArray>		 Type;
+  vtkSmartPointer<vtkIntArray>		 Type;
+  vtkSmartPointer<vtkIntArray>		 Marked;
 	
 	
 	
