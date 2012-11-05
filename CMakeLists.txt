@@ -151,17 +151,7 @@ ADD_LIBRARY(
 #For the Grafic reader plugin (and later) integrated tipsy HDF, tipsy binary, and grafic reader I use some of Doug Potter's/Joachim Stadel's fio
 # For the Tipsy reader plugin I use some of Doug Potter's Tipsy lib.
 # TODO: this is not working, hardcoding library path for now
-<<<<<<< HEAD
-ADD_LIBRARY(
-	fio
-	STATIC
-	fio/fio.c
-	fio/romberg.c
-)
-SET_TARGET_PROPERTIES(fio PROPERTIES LINKER_LANGUAGE C)
-SET_TARGET_PROPERTIES(fio PROPERTIES COMPILE_FLAGS " -fPIC")
 
-=======
 IF (NOT WIN32)
 	ADD_LIBRARY(
 		fio
@@ -173,22 +163,5 @@ IF (NOT WIN32)
 	SET_TARGET_PROPERTIES(fio PROPERTIES COMPILE_FLAGS "-fPIC")
         TARGET_LINK_LIBRARIES(pv_astro fio)
 ENDIF (NOT WIN32)
->>>>>>> bcf2e056fd5f804658800868595cef98c041c23e
 
 
-TARGET_LINK_LIBRARIES(
-<<<<<<< HEAD
-	AstroVizPlugin
-	fio
- 	TipsyHelpers
-=======
-	pv_astro
-	TipsyHelpers
->>>>>>> bcf2e056fd5f804658800868595cef98c041c23e
-	SQLitelib
-	#gmp
-	)
-<<<<<<< HEAD
-#TARGET_LINK_LIBRARIES(AstroVizPlugin #/Users/corbett/Documents/Projects/pvaddons/ParaViz/ParaViz_src/fio/libFio.so)
-=======
->>>>>>> bcf2e056fd5f804658800868595cef98c041c23e
