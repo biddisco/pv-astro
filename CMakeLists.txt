@@ -128,10 +128,10 @@ ADD_PARAVIEW_PLUGIN(pv_astro "1.1"
     vtkAddAdditionalAttribute.cxx 
     vtkFriendsOfFriendsHaloFinder.cxx 
     vtkRamsesReader.cxx
+		vtkGadgetReader.cxx
     vtkSQLiteReader.cxx
     vtkTrackFilter.cxx
     vtkSimpleBin.cxx
-    vtkRamsesReader.cxx
     ${GRAPHIC_SRCS}
     ${mip_WRAPPED_SRCS}
 
@@ -188,7 +188,7 @@ ADD_PARAVIEW_PLUGIN(StrangeAttractorsPlugin "1.0"
   
 # For helper functions often used, will later include these in a single
 # VTK class.
-ADD_LIBRARY(AstroVizHelpers STATIC AstroVizHelpersLib/AstroVizHelpers.cxx)
+ADD_LIBRARY(AstroVizHelpers AstroVizHelpersLib/AstroVizHelpers.cxx)
 
 SET_TARGET_PROPERTIES(AstroVizHelpers PROPERTIES COMPILE_FLAGS "-fPIC")
 TARGET_LINK_LIBRARIES(AstroVizHelpers vtkParallel)
@@ -225,6 +225,7 @@ SET_TARGET_PROPERTIES(SQLitelib PROPERTIES COMPILE_FLAGS "-fPIC")
 #For the Grafic reader plugin (and later) integrated tipsy HDF, tipsy binary, and grafic reader I use some of Doug Potter's/Joachim Stadel's fio
 # For the Tipsy reader plugin I use some of Doug Potter's Tipsy lib.
 # TODO: this is not working, hardcoding library path for now
+
 IF (NOT WIN32)
   ADD_LIBRARY(
     fio

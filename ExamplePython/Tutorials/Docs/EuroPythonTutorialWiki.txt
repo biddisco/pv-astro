@@ -1,0 +1,274 @@
+	In this sessions I will introduce ParaView, an open source application developed by researchers around the world for parallel visualization and analysis of large scale datasets, which in can be used to visualize and analyze terabytes of data in real time. ParaView’s core algorithms are implemented in C/C++ but all its functionality can be scripted from python with ease. 
+
+=Materials=
+*Tutorial Etherpad or whiteboard/piece of paper at front
+==Tutorial Files==
+These can all be found, if you are on the same wifi network as myself, on [http://berlin/ParaView-EuroPython/ http://berlin/ParaView-EuroPython/], or [ [http://etherpad.mit.edu/kluxyXC43b http://etherpad.mit.edu/kluxyXC43b]
+
+You can also get these files from DropBox [http://dl.dropbox.com/u/1326994/EuroPython http://dl.dropbox.com/u/1326994/EuroPython], from my USB sticks (come up front). Note you don't need all of ParaView-BinsAndSource, just the one which is appropriate for your platform. Try downloading the Projects directory next; the data, except for the Hipparcos data can be dynamically generated.
+
+*<tt>EuroPython-ParaView</tt>
+**<tt>ParaView-BinsAndSource</tt> [[http://www.paraview.org/paraview/resources/software.html these can also be found on the ParaView website]]
+**<tt>Tutorials</tt>
+***<tt>Data</tt> [contains the data needed for the tutorials]
+***<tt>Docs</tt> [contains this document and other useful tutorials]
+***<tt>Projects</tt> [contains sample projects with example python]
+****<tt>CSV</tt> [comma separated values tutorial]
+****<tt>RawBinary</tt>[raw binary tutorial]
+****<tt>Hipparcos</tt> [star catalog tutorial]
+
+=Setup–Bonus pre-requisite for attending the session.=
+[http://www.paraview.org/paraview/resources/software.html Download a binary of ParaView suitable for your OS. http://www.paraview.org/paraview/resources/software.html]
+
+Compiling ParaView for your OS is straightforward, although the compilation itself takes a bit of time (bring back the compilation coffee breaks, or rather a dinner break) so best to figure out if you need to do this prior to the session. [http://www.itp.uzh.ch/~corbett/astroviz/astrovizwiki.html#%5B%5BBuild%2Finstall%20ParaView%5D%5D See http://www.itp.uzh.ch/~corbett/astroviz/astrovizwiki.html#%5B%5BBuild%2Finstall%20ParaView%5D%5D] for instructions.
+
+==Testing your Installation==
+===Serial===
+Launch ParaView. Go to <tt>Tools->Python Shell</tt>. Type 
+<source lang="python">
+Sphere()
+Show() 
+Render()
+</source>
+You should see a sphere on screen.
+
+===Parallel===
+<font color="red">If you can't get the binary to work in 15 minutes, I recommend you use the server I have setup instead. If you have fun using ParaView you can start the compilation process on your own after the session, setting up ParaView for your machine with MPI support, and when it finishes go through this section.</font>
+====On your own machine====
+This will be a bit trickier for non-OS X machines, and is rather easy for OS X machines. But rewarding as you'll be able to take away the capability to do parallel visualization on your own. First of all, this is only relevant if you have more than one core on your machine. 
+
+Make sure furthermore that your binary, if you are working from one, was built against MPI and that your machine supports the same version of MPI. See [[http://www.paraview.org/Wiki/ParaView_Binaries]] for more information about how your ParaView binary was built. Here's a quick overview:
+
+*OSX: The ParaView.app is a folder which contains a bin folder which contains the pvserver and pvbatch executables. Add these to your path or navigate directly to them in the following.
+*Linux: Here it gets a bit trickier as the binaries that are built with ParaView don't work with MPI. I have a version I have compiled against Open-MPI, it's available in the ParaView-BinsAndSource directory. It may or maynot work for you, be sure to first compile and install the same version of MPI I compiled with.
+*Windows: It looks like the 3.8 binaries are supporting MS-MPI. However, never having touched a Windows machine for more than a few seconds I can't be of much use here. It looks like it should however work out of the box if you install MS-MPI as well.
+====On my machine.====
+Visit [http://etherpad.mit.edu/kluxyXC43b http://etherpad.mit.edu/kluxyXC43b] to request a portnumber and monitor to see when you receive one. Once you have been assigned one, skip to the ''all platforms'' section below.
+
+====All Platforms====
+ Got to <source>File->Connect</source> Click Add Server. 
+*My machine: specify kliq.in as the server, your portnumber as the number, give it a name and click save. Double click to connect the server.
+*Your own machine:
+Choose startup type <tt>Command</tt> and the command should be, to test on two cores
+<source>
+mpirun -np 2 /Users/corbett/Local/Programs/ParaView-3.10B/bin/pvserver
+</source>
+[[File:Serverosx.png]]
+
+Save and double click to start/connect to the server. Now we'll go through the same procedure of creating a sphere as before, only this time we'll display a color map indicating which process is responsible for which portion of the data:
+<source lang="python">
+sph=Sphere()
+dr1=Show()
+Render()
+pid=ProcessIdScalars()
+dr2=Show()
+dr2.ColorArrayName='ProcessId'
+Render()
+</source>
+
+This is the exciting part, you should see the sphere split into n parts, where n is the number of processors you have run on.
+[[File:Parallelsphere.png]]
+
+==What if you need to compile?==
+If the serial test failed as well, you should compile ParaView from source if you want to test out the ideas of the tutorial in code. I'll help you through this, but if you want to play around with ParaView remotely I can potentially give you ssh access to my machine and you can run via Xwindows remotely. Sign up for this on the Etherpad.
+
+=Let's Get Started Visualizing!=
+==Where to work with python from?==
+For future work we can either run things from within the ParaView Python shell, or from our own script/external shell. I prefer the latter in general, but the former will be much easier for this tutorial it offers
+*no need to setup PYTHONPATH
+*tab completion of methods
+*ability to interact via either python or the GUI (useful for example, for setting up the server)
+If you really want to run from a standalone script at this stage, the easiest is to add the python distributed with your paraview binary to you path as there is no guarantee that it was built with the same version of python that you use. This is in the <tt>bin/pvpython</tt> directory. 
+If you built from source rather, or really want to try using your system python:
+<tt>$PATH_TO_PARAVIEW_BUILD/bin:/$PATH_TO_PARAVIEW_BUILD/Utilities/VTKPythonWrapping</tt> to your <tt>$PYTHONPATH</tt>. For me this was accomplished by <tt>export PYTHONPATH=$PYTHONPATH:~/Local/Programs/ParaView-3.10B/bin/site-packages:~/Local/Programs/ParaView-3.10B/Utilities/VTKPythonWrapping/</tt>. If successful the following command, which will be placed at the top of all your python scripts, should work: 
+<source lang="python">from paraview.simple import *</source>. Then you can proceed with everything as usual. 
+==What to do next that is simple==
+We saw the previous example of a sphere, try playing around with setting its properties such as <tt>Center</tt> and <tt>Radius</tt>. The python shell from the ParaView GUI conveniently has tab completion. Another great feature is the <tt>Start Trace</tt> and <tt>Stop Trace</tt> option from the ParaView <tt>Tools</tt> menu. This allows you to interact with the GUI graphically and record everything as a python script for later use, modification, or use as inspiration. Also play around with different sources than the Sphere, you can see more sources available in the ParaView GUI. Create and view another source.
+==Pitfalls==
+Sometimes you might notice the sphere/source go off the screen. This is probably an indication that you may need to reset the Camera view. This is done in the GUI with button labelled "Reset" and can be done programmatically by <tt>ResetCamera()</tt>. Try this command first, and if you are still having trouble seeing something, it may be a bug in your code. A list of all commands: http://www2.fz-juelich.de/jsc/files/docs/vortraege/paraview/help.paraview.simple.txt
+
+==Connecting to the Server==
+From the GUI python shell do as the example of the sphere above, setting up the server in the GUI. If using python from an external shell, start the server from the command line <tt>mpiexec -np 2 pvserver</tt>. Then you can connect to the server from python via e.g. <source>Connect('localhost')</source>
+
+==CSV files==
+CSV stands for comma separated values but in principle can be any ascii data organized by row and separated by a distinctive marker into columns. An example is in the Data folder under <tt>simple.csv</tt>
+
+==RAW binary structured grid data==
+ParaView can read raw binary files if you tell it a bit about the file. Structured binary data, that is data that exists at every point in space on a structured grid, is the simplest. Other types of binary data may require another reader but this is easy to implement in python or in C++. We'll cover this later. For now, start out by reading in either <tt>coordinates.raw</tt>, or <tt>random.raw</tt> from the Tutorials data directory. Some examples are given in <tt>RawBinary.py</tt> .
+===Random.raw===
+[[File:Randomraw.png|500px]]
+<source lang="python">
+ROOT_DIR='/Users/corbett/Documents/Projects/EuroPython/'
+
+random_raw = ImageReader(FilePrefix=ROOT_DIR+'/Tutorials/Data/random.raw',
+ScalarArrayName = 'random number',
+DataExtent = [0, 9, 0, 9, 0, 9],
+DataByteOrder = 'LittleEndian',
+DataScalarType = 'double')
+random_raw.UpdatePipeline()
+
+#Structured data such as this doesn't automatically get a display in the GUI, we have to create a glyph.
+glyph = Glyph( GlyphType="Sphere", 
+ Scalars = ['POINTS', 'random number'],
+ ScaleMode = 'scalar'
+ )
+dr=Show()
+dr.ColorArrayName='random number'
+Render()
+WriteImage(ROOT_DIR+'/Tutorials/Screenshots/RawBinary.png')
+# Now if we want to select some subset of data
+# say the random numbers between 0.75 and 1
+thresh = Threshold(Scalars = ['POINTS', 'random number'],
+ThresholdRange = [.75, 1.0])
+dr=Show()
+dr.ColorArrayName='random number'
+Render()
+ResetCamera()
+# Saving a screenshot
+WriteImage(ROOT_DIR+'/Tutorials/Screenshots/RawBinary-topquart.png')
+
+# Getting information about the number of points after our threshold
+di=thresh.GetDataInformation()
+print 'data set has %d points' % (di.DataInformation.GetNumberOfPoints())
+
+#Finally let's visualize the process ids this time around
+pids = ProcessIdScalars()
+dr=Show()
+dr.ColorArrayName='ProcessId'
+Render()
+</source>
+
+===Generating your own data===
+<source lang="python">
+import struct
+import random
+
+class BinaryWriter:
+  def __init__(self,binfile,datatype):
+      """
+      binfile: path to file to write to
+      datatype: one of format strings in
+        http://docs.python.org/release/2.5.2/lib/module-struct.html
+      """
+      self.binfile=open(binfile, 'wb')
+      self.datatype=datatype 
+  def write(self,data):
+    for datum in data:
+      datum=struct.pack(self.datatype,datum)
+      self.binfile.write(datum)
+
+def gen_simple_raw():
+  writer=BinaryWriter('coordinates.raw','i')
+  for z in range(10):    
+    for y in range(10):
+      for x in range(10):
+        writer.write([x,y,z])
+
+def gen_random_number_raw():
+  writer=BinaryWriter('random.raw','d')
+  for z in range(10):    
+    for y in range(10):
+      for x in range(10):
+        writer.write([random.random()])
+
+</source>
+
+==Build your own dataset==
+Download or create your own data. Hipparcos is a catalog of stars. Their positions are measured in ascension, <math> \alpha</math> and declination <math>\delta</math>. Play around with doing calculations in Python to get out the coordinate results. Color by the magnitude of the stars, or whatever you like!
+[[File:Hipparcos-small.png]]
+
+===Coordinate Formulae===
+<math> \pi x = \cos \delta \cos \alpha </math>
+
+<math> \pi y = \cos \delta \sin \alpha </math>
+
+<math> \pi z = \sin \delta </math>
+
+So we can do a Calculator filter with coordinate results via <math>cos(Dec)*cos(RA)/3.14159265*iHat+cos(Dec)*sin(RA)/3.14159265*jHat+sin(Dec)/3.14159265*kHat</math>.
+===Source===
+<source lang="python">
+ROOT_DIR='/Users/corbett/Documents/Projects/EuroPython/'
+
+hipparcos = \
+  CSVReader( FileName=[ROOT_DIR+'/Tutorials/Data/HipparcosPrune.csv'])
+# Dummy table to points filter so that we can
+# use filters that work only on point data, such as calc
+table=TableToPoints(
+  XColumn = 'StarID',
+  YColumn = 'StarID',
+  ZColumn = 'StarID'
+)
+table.UpdatePipeline()
+# This will give us x,y,z from ascencion and declination
+calc=Calculator(
+  Function ='cos(Dec)*cos(RA)/%f*iHat+cos(Dec)*sin(RA)/%f*jHat+sin(Dec)/%f*kHat'%(pi,pi,pi),
+  CoordinateResults = 1
+)
+calc.UpdatePipeline()
+glyph = Glyph(GlyphType='2D Glyph',Scalars = ['POINTS', 'AbsMag'])
+glyph.GlyphType.GlyphType = 'Vertex'
+dr=Show()
+dr.ColorArrayName = 'AbsMag'
+dr.LookupTable=GetLookupTableForArray('AbsMag', 1 )
+
+Render()
+ResetCamera()
+WriteImage(ROOT_DIR+'/Tutorials/Screenshots/Hipparcos.png')
+
+
+</source>
+
+=Learning More=
+If you use the ParaView GUI you can go to <tt>Tools->Start Trace</tt> to record any of your interactions as a python script. This is a great tool for learning what's possible. You can also check out the additional documentation in the Docs folder in the Tutorial directory and ParaView has a huge user community behind it. 
+
+=Extending ParaView with Python=
+We can add our own custom readers and filters, via programmable sources and filters, respectively. 
+
+==Programmable Source (custom python reader)==
+[[File:CustomReader-small.png]]
+
+Programmable sources and filters are themselves created in a very similar manner to our previous readers and filters we have dealt with, only they contain at the very least a script argument which is the text of the program you wish to execute. You can give this inline, but I recommend reading it in from a file to keep things clean. Here's an example:
+<source lang="python">
+ROOT_DIR='/Users/corbett/Documents/Projects/EuroPython/'
+progSource =\
+  ProgrammableSource(Script=\
+  open(ROOT_DIR+'/Tutorials/Projects/CustomReader/SimplePoints.py').read())
+progSource.UpdatePipeline()
+glyph = Glyph(GlyphType='Sphere',Scalars = ['POINTS', 'Temperature'],     ScaleMode = 'off')
+dr=Show()
+dr.ColorArrayName='Temperature'
+dr.LookupTable=GetLookupTableForArray('Temperature', 1 )
+Render()
+ResetCamera()
+WriteImage(ROOT_DIR+'/Tutorials/Screenshots/CustomReader.png')
+</source>
+And here would be <tt>SimplePoints.py</tt>
+<source text="python">
+from paraview import vtk
+# where we'll put our data
+output=self.GetOutput()
+
+# Our data: points and arrays. One could imagine reading these instead from a # file of a custom folder, which is the point of this exercise.
+# Points
+points=vtk.vtkPoints()
+for point in [(0,0,0),(1,1,1),(2,2,2),(3,3,3)]:
+  points.InsertNextPoint(point[0],point[1],point[2])
+
+# One Scalar Array
+temp=vtk.vtkDoubleArray()
+temp.SetName('Temperature')
+temp.SetNumberOfComponents(1)
+
+for val in [0.0,1.1,2.2,3.3]:
+  temp.InsertNextValue(val)
+
+# Placing these in the output dataset
+output.SetPoints(points)
+output.GetPointData().AddArray(temp)
+# There we are!
+</source>
+
+=Still Wanting More?=
+Let's chat about what you want to visualize and how ParaView may or may not be suitable for that task. The best resource for learning about ParaView is its website, active developers and users mailing list, as well as its source code. 
+
+If you want to play more with ParaView today, try getting started with visualizing your favorite dataset and learning the associated python. Or play around with visualizing or creating a new dataset and using some of ParaView's powerful analysis functions to discover something new.

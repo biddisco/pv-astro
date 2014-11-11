@@ -69,6 +69,22 @@
           If another guess is desired (required in the case of a non-cosmo run)
           please specify a non-zero positive value here.
 
+	
+	  <IntVectorProperty name="ConvertUnits"
+      command="SetConvertUnits"
+      number_of_elements="1"
+      default_values="1">
+      <BooleanDomain name="bool" />
+      <Documentation>
+		If this is set to true we do the following conversions:
+		 - Converting coordinates from simulation units to kpc.
+		 - Converting velocities from simulation units to km/s.
+		 - Converting masses from simulation units to Msol.
+		 - Converting ages to Gyr (useful for average stellar ages). 
+
+
+		</Documentation>
+    </IntVectorProperty>
         </Documentation>
       </DoubleVectorProperty>
 

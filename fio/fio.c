@@ -2754,13 +2754,70 @@ static int graficGetAttr(FIO fio,
     fioGrafic *gio = (fioGrafic *)fio;
     assert(fio->eFormat == FIO_FORMAT_GRAFIC);
     if ( strcmp(attr,"dTime")==0 ) {
-	switch(dataType) {
-	case FIO_TYPE_FLOAT: *(float *)(data) = gio->dTime; break;
-	case FIO_TYPE_DOUBLE:*(double *)(data) = gio->dTime; break;
-	default: return 0;
-	    }
-	return 1;
-	}
+      switch(dataType) {
+        case FIO_TYPE_FLOAT: *(float *)(data) = gio->dTime; break;
+        case FIO_TYPE_DOUBLE:*(double *)(data) = gio->dTime; break;
+        default: return 0;
+    
+      }
+      return 1;
+    }
+    else if(strcmp(attr,"dNx")==0 ){
+      switch(dataType) {
+        case FIO_TYPE_FLOAT: *(float *)(data) = gio->hdr.n[0]; break;
+        case FIO_TYPE_DOUBLE:*(double *)(data) = gio->hdr.n[0]; break;
+        default: return 0;
+      }
+      return 1;
+    }
+    else if(strcmp(attr,"dNy")==0 ){
+      switch(dataType) {
+        case FIO_TYPE_FLOAT: *(float *)(data) = gio->hdr.n[1]; break;
+        case FIO_TYPE_DOUBLE:*(double *)(data) = gio->hdr.n[1]; break;
+        default: return 0;
+      }
+      return 1;
+    }
+    else if(strcmp(attr,"dNz")==0 ){
+      switch(dataType) {
+        case FIO_TYPE_FLOAT: *(float *)(data) = gio->hdr.n[2]; break;
+        case FIO_TYPE_DOUBLE:*(double *)(data) = gio->hdr.n[2]; break;
+        default: return 0;
+      }
+      return 1;
+    }
+    else if(strcmp(attr,"dOx")==0 ){
+      switch(dataType) {
+        case FIO_TYPE_FLOAT: *(float *)(data) = gio->hdr.o[0]; break;
+        case FIO_TYPE_DOUBLE:*(double *)(data) = gio->hdr.o[0]; break;
+        default: return 0;
+      }
+      return 1;
+    }
+    else if(strcmp(attr,"dOy")==0 ){
+      switch(dataType) {
+        case FIO_TYPE_FLOAT: *(float *)(data) = gio->hdr.o[1]; break;
+        case FIO_TYPE_DOUBLE:*(double *)(data) = gio->hdr.o[1]; break;
+        default: return 0;
+      }
+      return 1;
+    }
+    else if(strcmp(attr,"dOz")==0 ){
+      switch(dataType) {
+        case FIO_TYPE_FLOAT: *(float *)(data) = gio->hdr.o[2]; break;
+        case FIO_TYPE_DOUBLE:*(double *)(data) = gio->hdr.o[2]; break;
+        default: return 0;
+      }
+      return 1;
+    }
+    else if(strcmp(attr,"dDx")==0 ){
+      switch(dataType) {
+        case FIO_TYPE_FLOAT: *(float *)(data) = gio->hdr.dx; break;
+        case FIO_TYPE_DOUBLE:*(double *)(data) = gio->hdr.dx; break;
+        default: return 0;
+      }
+      return 1;
+    }
 
     return 0;
     }
