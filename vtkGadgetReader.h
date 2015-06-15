@@ -22,7 +22,7 @@
 
 #include "vtkSmartPointer.h"
 #include "tipsylib/ftipsy.hpp" // functions take Gadget particle objects
-#include <vtkstd/vector>
+#include <vector>
 
 
 

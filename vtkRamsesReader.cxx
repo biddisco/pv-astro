@@ -56,8 +56,7 @@ typedef RAMSES::HYDRO::multi_domain_data< RAMSES_tree, RAMSES::HYDRO::data<RAMSE
 typedef RAMSES::PART::multi_domain_data< RAMSES_tree, double > multi_part; 
 typedef RAMSES::PART::multi_domain_data< RAMSES_tree, int > multi_part_int; 
 
-
-<<<<<<< HEAD
+/*
 // CGS units needed // TODO: put these in a header file
 float kpcInCm=3.08568025*pow(10,21);
 float pcInCm=3.08568025* pow(10,18);
@@ -65,9 +64,8 @@ float kmInCm=pow(10,5);
 float GyrInS=3.1536*pow(10,16);
 float yrInS=3.1553*pow(10,7);
 float msolInG=1.98892*pow(10,33);
+*/
 
-=======
->>>>>>> aa025213280c2565323c38efd35976db026f1b69
 // if convert units is set to true we
 // * Converting coordinates from simulation units to kpc
 // * Converting velocities from simulation units to km/s
@@ -120,20 +118,6 @@ vtkRamsesReader::vtkRamsesReader()
   this->Vertices      = NULL;
   this->GlobalIds     = NULL;
   this->ParticleIndex = 0;
-<<<<<<< HEAD
-  this->Potential   = NULL;
-  this->Mass        = NULL;
-  this->EPS         = NULL;
-  this->RHO         = NULL;
-  this->Hsmooth     = NULL;
-  this->Temperature = NULL;
-  this->Metals      = NULL;
-  this->Tform       = NULL;
-  this->Velocity    = NULL;
-  this->Controller = NULL;
-  this->ConvertUnits = false; 
-  this->Controller=vtkMultiProcessController::GetGlobalController();
-=======
   this->Potential     = NULL;
   this->Mass          = NULL;
   this->EPS           = NULL;
@@ -143,11 +127,10 @@ vtkRamsesReader::vtkRamsesReader()
   this->Metals        = NULL;
   this->Tform         = NULL;
   this->Velocity      = NULL;
-  this->ConvertUnits    = false; 
+  this->ConvertUnits  = false; 
   this->ReadHeaderOnly = false;
   this->Controller    = NULL;
   this->Controller    = vtkMultiProcessController::GetGlobalController();
->>>>>>> aa025213280c2565323c38efd35976db026f1b69
   
   this->TimeStep    = 0;
   this->TimeStepTolerance = 1E-6;
