@@ -2762,6 +2762,7 @@ static int graficGetAttr(FIO fio,
       }
       return 1;
     }
+/*
     else if(strcmp(attr,"dNx")==0 ){
       switch(dataType) {
         case FIO_TYPE_FLOAT: *(float *)(data) = gio->hdr.n[0]; break;
@@ -2818,7 +2819,7 @@ static int graficGetAttr(FIO fio,
       }
       return 1;
     }
-
+*/
     return 0;
     }
 
