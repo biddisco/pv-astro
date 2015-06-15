@@ -13,12 +13,6 @@ IF (VTK_USE_MPI)
   ADD_DEFINITIONS(-DUSE_MPI)
 ENDIF (VTK_USE_MPI)
 
-#
-# For the MIP Painter we need access to some IceT viewport info
-# It's awful, but there's no other way to get the image reduction factor
-#
-INCLUDE_DIRECTORIES(${ParaView_BINARY_DIR}/Utilities/IceT/src/include)
-
 ###############
 # pv_astro plugin
 # INCLUDES
@@ -82,39 +76,6 @@ ENDIF (NOT WIN32)
   ENDIF (ASTRO_USE_OPENMP)
 
 #--------------------------------------------------
-# Files for MIP that must be wrapped in client server
-#--------------------------------------------------
-SET( mip_WRAPPED_SRCS
-  vtkMIPRepresentation.cxx  
-  vtkMIPDefaultPainter.cxx
-  vtkMIPPainter.cxx
-)
-
-#--------------------------------------------------
-# Qt .ui files for MIP that are wrapped and added to plugin
-#--------------------------------------------------
-IF(PARAVIEW_BUILD_QT_GUI)
-  qt4_wrap_ui(MIP_UI_SRCS 
-    pqMIPDisplayPanelDecorator.ui
-  )
-
-  qt4_wrap_cpp(MIP_MOC_SRCS 
-    pqMIPDisplayPanelDecorator.h
-  )
-     
-  set(MIP_SRCS
-    pqMIPDisplayPanelDecorator.cxx
-  )
-
-  add_paraview_display_panel_decorator(
-    MIP_IFACES
-    MIP_IFACE_SRCS
-    CLASS_NAME pqMIPDisplayPanelDecorator
-    PANEL_TYPES pqDisplayProxyEditor
-  )
-ENDIF(PARAVIEW_BUILD_QT_GUI)
-
-#--------------------------------------------------
 # pv_astro Plugin
 #--------------------------------------------------
 ADD_PARAVIEW_PLUGIN(pv_astro "1.1"
@@ -133,7 +94,6 @@ ADD_PARAVIEW_PLUGIN(pv_astro "1.1"
     vtkTrackFilter.cxx
     vtkSimpleBin.cxx
     ${GRAPHIC_SRCS}
-    ${mip_WRAPPED_SRCS}
 
   SERVER_MANAGER_XML
     TipsyReaderSM.xml
@@ -150,7 +110,6 @@ ADD_PARAVIEW_PLUGIN(pv_astro "1.1"
     SimpleBinSM.xml
     RamsesReaderSM.xml
     #GadgetReaderSM.xml
-    vtkMIPRepresentation.xml
 
   GUI_RESOURCES
     TipsyReader.qrc
@@ -162,15 +121,10 @@ ADD_PARAVIEW_PLUGIN(pv_astro "1.1"
     AstroVizFilterMenu.xml
   GUI_INTERFACES 
     ${IFACES} 
-    ${MIP_IFACES}  
   GUI_SOURCES  
     ${PV_ASTRO_GUI_FILES}
     ${MOC_SRCS} 
-    ${MIP_MOC_SRCS}
     ${IFACE_SRCS}
-    ${MIP_SRCS}
-    ${MIP_UI_SRCS}
-    ${MIP_IFACE_SRCS}
   )
 #PARAVIEW_INCLUDE_WRAPPED_SOURCES(fio/fio.c fio/romberg.c)
 #Defines the StrangeAttractors plugin
@@ -191,7 +145,8 @@ ADD_PARAVIEW_PLUGIN(StrangeAttractorsPlugin "1.0"
 ADD_LIBRARY(AstroVizHelpers AstroVizHelpersLib/AstroVizHelpers.cxx)
 
 SET_TARGET_PROPERTIES(AstroVizHelpers PROPERTIES COMPILE_FLAGS "-fPIC")
-TARGET_LINK_LIBRARIES(AstroVizHelpers vtkParallel)
+# TARGET_LINK_LIBRARIES(AstroVizHelpers vtkParallel)
+
 TARGET_LINK_LIBRARIES(pv_astro AstroVizHelpers ) 
 SET_TARGET_PROPERTIES(pv_astro PROPERTIES COMPILE_FLAGS "${OpenMP_CXX_FLAGS}")
 
