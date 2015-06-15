@@ -27,7 +27,6 @@
 #include <sys/stat.h>
 #include <iostream>
 #include <deque>
-vtkCxxRevisionMacro(vtkStrangeAttractors, "$Revision: 1.0 $");
 vtkStandardNewMacro(vtkStrangeAttractors);
 
 
@@ -111,7 +110,7 @@ int vtkStrangeAttractors::RequestInformation(
 {
   vtkInformation* outInfo = outputVector->GetInformationObject(0);
   // means that the data set can be divided into an arbitrary number of pieces
-  outInfo->Set(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(),-1);
+//  outInfo->Set(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(),-1);
   return 1;
 }
 

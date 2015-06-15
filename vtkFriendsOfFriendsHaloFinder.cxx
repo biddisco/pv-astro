@@ -22,11 +22,10 @@
 #include "vtkCallbackCommand.h"
 #include "vtkPolyData.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
-#include <vtkstd/vector>
-#include <vtkstd/map>
+#include <vector>
+#include <map>
 
 
-vtkCxxRevisionMacro(vtkFriendsOfFriendsHaloFinder, "$Revision: 1.72 $");
 vtkStandardNewMacro(vtkFriendsOfFriendsHaloFinder);
 vtkCxxSetObjectMacro(vtkFriendsOfFriendsHaloFinder,Controller,
 	vtkMultiProcessController);

@@ -39,7 +39,7 @@ class VTK_EXPORT vtkGadgetReader : public vtkPolyDataAlgorithm
 {
 public:
   static vtkGadgetReader* New();
-  vtkTypeRevisionMacro(vtkGadgetReader,vtkPolyDataAlgorithm);
+  vtkTypeMacro(vtkGadgetReader,vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
   // Description:
   // Set/Get the name of the file from which to read points.

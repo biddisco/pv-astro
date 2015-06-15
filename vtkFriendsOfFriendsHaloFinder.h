@@ -40,7 +40,7 @@ class VTK_EXPORT vtkFriendsOfFriendsHaloFinder : public vtkPointSetAlgorithm
 {
 public:
   static vtkFriendsOfFriendsHaloFinder *New();
-  vtkTypeRevisionMacro(vtkFriendsOfFriendsHaloFinder,
+  vtkTypeMacro(vtkFriendsOfFriendsHaloFinder,
 		vtkPointSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
 

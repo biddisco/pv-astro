@@ -22,7 +22,7 @@
 
 #include "vtkSmartPointer.h"
 #include "tipsylib/ftipsy.hpp" // functions take Tipsy particle objects
-#include <vtkstd/vector>
+#include <vector>
 
 class vtkPolyData;
 class vtkCharArray;
@@ -36,7 +36,7 @@ class VTK_EXPORT vtkTipsyReader : public vtkPolyDataAlgorithm
 {
 public:
   static vtkTipsyReader* New();
-  vtkTypeRevisionMacro(vtkTipsyReader,vtkPolyDataAlgorithm);
+  vtkTypeMacro(vtkTipsyReader,vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
   // Description:
   // Set/Get the name of the file from which to read the marked points.

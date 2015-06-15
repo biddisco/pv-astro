@@ -27,7 +27,6 @@
 #include <algorithm>
 
 
-vtkCxxRevisionMacro(vtkProfileFilter, "$Revision: 1.72 $");
 vtkStandardNewMacro(vtkProfileFilter);
 vtkCxxSetObjectMacro(vtkProfileFilter, Controller, vtkMultiProcessController);
 //----------------------------------------------------------------------------

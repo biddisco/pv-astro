@@ -18,13 +18,12 @@
 #include "vtkUnsignedCharArray.h"
 #include "vtkSortDataArray.h"
 #include "vtkMultiProcessController.h"
-#include <vtkstd/string>
+#include <string>
 #include "vtkMath.h"
 #include <stdio.h>
 #include <stdlib.h>
 
 
-vtkCxxRevisionMacro(vtkAddAdditionalAttribute, "$Revision: 1.72 $");
 vtkStandardNewMacro(vtkAddAdditionalAttribute);
 vtkCxxSetObjectMacro(vtkAddAdditionalAttribute, Controller, vtkMultiProcessController);
 //----------------------------------------------------------------------------

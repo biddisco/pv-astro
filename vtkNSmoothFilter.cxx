@@ -23,7 +23,6 @@
 
 using vtkstd::string;
 
-vtkCxxRevisionMacro(vtkNSmoothFilter, "$Revision: 1.72 $");
 vtkStandardNewMacro(vtkNSmoothFilter);
 //----------------------------------------------------------------------------
 vtkNSmoothFilter::vtkNSmoothFilter():vtkPointSetAlgorithm()

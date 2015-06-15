@@ -41,7 +41,6 @@
 
 #include <vtksys/SystemTools.hxx>
 
-vtkCxxRevisionMacro(vtkRamsesReader, "$Revision: 1.0 $");
 vtkStandardNewMacro(vtkRamsesReader);
 vtkInformationKeyMacro(vtkRamsesReader,VCIRC_CONVERSION,Double);
 //... define the RAMSES base cell type to be of cell_locally_essential type
@@ -255,8 +254,7 @@ int vtkRamsesReader::RequestInformation(
 {
   vtkInformation* outInfo = outputVector->GetInformationObject(0);
 	// means that the data set can be divided into an arbitrary number of pieces
-  outInfo->Set(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(),
-	       -1);
+  outInfo->Set(CAN_HANDLE_PIECE_REQUEST(), 1);
 
 
   this->PointDataArraySelection->AddArray("Potential");
@@ -356,9 +354,9 @@ int vtkRamsesReader::RequestData(vtkInformation* req,
   //
   this->TimeOutOfRange = 0;
   this->ActualTimeStep = this->TimeStep;
-  if (outInfo->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEPS()))
+  if (outInfo->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP()))
     {
-    double requestedTimeValue = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEPS())[0];
+    double requestedTimeValue = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP());
     this->ActualTimeStep = vtkstd::find_if(
       this->TimeStepValues.begin(), this->TimeStepValues.end(),
       vtkstd::bind2nd( RamsesTimeToleranceCheck( this->TimeStepTolerance ), requestedTimeValue ))
@@ -368,21 +366,21 @@ int vtkRamsesReader::RequestData(vtkInformation* req,
       {
       this->TimeOutOfRange = 1;
       }
-    output->GetInformation()->Set(vtkDataObject::DATA_TIME_STEPS(), &requestedTimeValue, 1);
+    output->GetInformation()->Set(vtkDataObject::DATA_TIME_STEP(), requestedTimeValue);
     }
   else
     {
-    double timevalue[1];
+    double timevalue;
     unsigned int index = this->ActualTimeStep;
     if (index<this->TimeStepValues.size())
       {
-      timevalue[0] = this->TimeStepValues[index];
+      timevalue = this->TimeStepValues[index];
       }
     else
       {
-      timevalue[0] = this->TimeStepValues[0];
+      timevalue = this->TimeStepValues[0];
       }
-    output->GetInformation()->Set(vtkDataObject::DATA_TIME_STEPS(), &timevalue[0], 1);
+    output->GetInformation()->Set(vtkDataObject::DATA_TIME_STEP(), timevalue);
     }
 
   if (this->TimeOutOfRange) {
@@ -897,7 +895,7 @@ int vtkRamsesReader::RequestData(vtkInformation* req,
       double total_mass_leftover_local[1] = {mass_leftover};
       double total_mass_leftover_global[1];      
       
-      double total_particles_local[1] = {total_particles};
+      double total_particles_local[1] = {static_cast<double>(total_particles)};
       double total_particles_global[1];      
       
       this->Controller->AllReduce(total_mass_leftover_local, total_mass_leftover_global, 1, vtkCommunicator::SUM_OP);
@@ -952,7 +950,7 @@ int vtkRamsesReader::RequestData(vtkInformation* req,
     
     // syncronizing the total number of gas particles if necessary
     if(this->Controller!=NULL) {
-      double total_gaspart_local[1] = {gas_id};
+      double total_gaspart_local[1] = {static_cast<double>(gas_id)};
       double total_gaspart_global[1];      
       
       this->Controller->AllReduce(total_gaspart_local, total_gaspart_global, 1, vtkCommunicator::SUM_OP);      

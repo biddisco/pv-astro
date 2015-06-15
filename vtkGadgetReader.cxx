@@ -30,7 +30,6 @@
 #include <functional>
 #include <algorithm>
 #include "assert.h"
-vtkCxxRevisionMacro(vtkGadgetReader, "$Revision: 1.0 $");
 vtkStandardNewMacro(vtkGadgetReader);
 
 

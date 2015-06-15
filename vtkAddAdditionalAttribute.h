@@ -34,7 +34,7 @@ class VTK_EXPORT vtkAddAdditionalAttribute : public vtkPointSetAlgorithm
 {
 public:
   static vtkAddAdditionalAttribute *New();
-  vtkTypeRevisionMacro(vtkAddAdditionalAttribute,vtkPointSetAlgorithm);
+  vtkTypeMacro(vtkAddAdditionalAttribute,vtkPointSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
   // Description:
   // Set/Get the name of the file from which to get additional attributes

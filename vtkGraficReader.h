@@ -22,7 +22,7 @@
 
 #include "vtkSmartPointer.h"
 #include "tipsylib/ftipsy.hpp" // functions take Grafic particle objects
-#include <vtkstd/vector>
+#include <vector>
 
 class vtkPolyData;
 class vtkCharArray;
@@ -37,7 +37,7 @@ class VTK_EXPORT vtkGraficReader : public vtkPolyDataAlgorithm
 {
 public:
   static vtkGraficReader* New();
-  vtkTypeRevisionMacro(vtkGraficReader,vtkPolyDataAlgorithm);
+  vtkTypeMacro(vtkGraficReader,vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
   // Description:
   // Set/Get the name of the file from which to read points.

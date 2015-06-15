@@ -22,8 +22,8 @@
 
 #include "vtkSmartPointer.h"
 #include "tipsylib/ftipsy.hpp" // functions take Ramses particle objects
-#include <vtkstd/vector>       // std
-#include <vtkstd/string>       // std
+#include <vector>       // std
+#include <string>       // std
 
 class vtkPolyData;
 class vtkCharArray;
@@ -52,7 +52,7 @@ class VTK_EXPORT vtkRamsesReader : public vtkPolyDataAlgorithm
 {
 public:
   static vtkRamsesReader* New();
-  vtkTypeRevisionMacro(vtkRamsesReader,vtkPolyDataAlgorithm);
+  vtkTypeMacro(vtkRamsesReader,vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // gives the vcircconversion factor for profile or downstream computation, if necessary

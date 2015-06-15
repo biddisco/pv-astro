@@ -28,7 +28,7 @@
 #include "vtkCellArray.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
-#include <vtkstd/vector>
+#include <vector>
 
 class vtkPolyData;
 class vtkCharArray;
@@ -43,7 +43,7 @@ class VTK_EXPORT vtkSQLiteReader : public vtkPolyDataAlgorithm
 {
 public:
 	static vtkSQLiteReader* New();
-	vtkTypeRevisionMacro(vtkSQLiteReader,vtkPolyDataAlgorithm);
+	vtkTypeMacro(vtkSQLiteReader,vtkPolyDataAlgorithm);
 	void PrintSelf(ostream& os, vtkIndent indent);
 
 	// Set/Get the name of the file from which to read points.

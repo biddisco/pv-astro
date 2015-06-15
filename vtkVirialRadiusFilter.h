@@ -43,7 +43,7 @@ class VTK_EXPORT vtkVirialRadiusFilter : public vtkUnstructuredGridAlgorithm
 {
 public:
   static vtkVirialRadiusFilter* New();
-  vtkTypeRevisionMacro(vtkVirialRadiusFilter, vtkUnstructuredGridAlgorithm);
+  vtkTypeMacro(vtkVirialRadiusFilter, vtkUnstructuredGridAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
   // Description:
   // Get/Set the softening parameter

@@ -35,7 +35,7 @@ class VTK_EXPORT vtkNSmoothFilter : public vtkPointSetAlgorithm
 {
 public:
   static vtkNSmoothFilter *New();
-  vtkTypeRevisionMacro(vtkNSmoothFilter,vtkPointSetAlgorithm);
+  vtkTypeMacro(vtkNSmoothFilter,vtkPointSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:

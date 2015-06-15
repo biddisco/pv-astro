@@ -36,7 +36,6 @@
 #include "RAMSES_amr_data.hh"
 #include "RAMSES_hydro_data.hh"
 #include <libgen.h> 
-vtkCxxRevisionMacro(vtkGraficReader, "$Revision: 1.0 $");
 vtkStandardNewMacro(vtkGraficReader);
 
 // TODO: re-put these in helper library, rather than JB's separated out 1 per file awkward
@@ -171,8 +170,7 @@ int vtkGraficReader::RequestInformation(
 {
 	vtkInformation* outInfo = outputVector->GetInformationObject(0);
 	// means that the data set can be divided into an arbitrary number of pieces
-	outInfo->Set(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(),
-		-1);
+  outInfo->Set(CAN_HANDLE_PIECE_REQUEST(), 1);
 
   this->PointDataArraySelection->AddArray("Potential");
   this->PointDataArraySelection->AddArray("Mass");

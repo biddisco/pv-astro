@@ -34,7 +34,6 @@
 #include <vector>
 
 
-vtkCxxRevisionMacro(vtkTrackFilter, "$Revision: 0.1 $");
 vtkStandardNewMacro(vtkTrackFilter);
 
 //----------------------------------------------------------------------------

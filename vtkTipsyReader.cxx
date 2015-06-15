@@ -21,7 +21,6 @@
 #include <cmath>
 #include <assert.h>
 
-vtkCxxRevisionMacro(vtkTipsyReader, "$Revision: 1.0 $");
 vtkStandardNewMacro(vtkTipsyReader);
 //----------------------------------------------------------------------------
 vtkSmartPointer<vtkFloatArray> AllocateDataArray(
@@ -377,8 +376,8 @@ int vtkTipsyReader::RequestInformation(
 {
 	vtkInformation* outInfo = outputVector->GetInformationObject(0);
 	// means that the data set can be divided into an arbitrary number of pieces
-	outInfo->Set(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(),
-		-1);
+  //
+  outInfo->Set(CAN_HANDLE_PIECE_REQUEST(), 1);
 
   this->PointDataArraySelection->AddArray("Potential");
   this->PointDataArraySelection->AddArray("Mass");
@@ -486,7 +485,7 @@ int vtkTipsyReader::RequestData(vtkInformation*,
 		{
 		vtkSmartPointer<vtkDistributedDataFilter> d3 = \
 		    vtkSmartPointer<vtkDistributedDataFilter>::New();
-		d3->AddInput(tipsyReadInitialOutput);
+		d3->AddInputData(tipsyReadInitialOutput);
 		d3->UpdateInformation();
 		d3->Update();
 		// Changing output to output of d3

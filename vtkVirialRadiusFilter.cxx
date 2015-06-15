@@ -24,7 +24,6 @@
 #include <cmath>
 using vtkstd::string;
 
-vtkCxxRevisionMacro(vtkVirialRadiusFilter, "$Revision: 1.72 $");
 vtkStandardNewMacro(vtkVirialRadiusFilter);
 vtkCxxSetObjectMacro(vtkVirialRadiusFilter,Controller,
 	vtkMultiProcessController);

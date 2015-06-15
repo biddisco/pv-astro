@@ -42,7 +42,6 @@
 #include <math.h>
 
 
-vtkCxxRevisionMacro(vtkSimpleBin, "$Revision: 0.1 $");
 vtkStandardNewMacro(vtkSimpleBin);
 
 //----------------------------------------------------------------------------
@@ -190,7 +189,7 @@ int vtkSimpleBin::RequestData(vtkInformation*,
 
 	// init every field to 0
 	for (int i = 0; i<nBin;i++){output->InsertNextBlankRow(0.0);}
-	output->Update();
+//	output->Update();
 
 
 	// set up binned value
@@ -208,7 +207,7 @@ int vtkSimpleBin::RequestData(vtkInformation*,
 		if(this->LogScale){val = pow(10,val);}
 		valueArr->SetTuple1(i,val);
 	}
-	output->Update();
+//	output->Update();
 
 
 	// sum up the values
@@ -282,7 +281,7 @@ int vtkSimpleBin::RequestData(vtkInformation*,
 		}
 	}
 
-	output->Update();
+//	output->Update();
 
 	timer->StopTimer();
 

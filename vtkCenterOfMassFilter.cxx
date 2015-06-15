@@ -19,7 +19,6 @@
 #include "vtkSmartPointer.h"
 #include "vtkTimerLog.h"
 //----------------------------------------------------------------------------
-vtkCxxRevisionMacro(vtkCenterOfMassFilter, "$Revision: 1.72 $");
 vtkStandardNewMacro(vtkCenterOfMassFilter);
 vtkCxxSetObjectMacro(vtkCenterOfMassFilter,Controller, vtkMultiProcessController);
 //----------------------------------------------------------------------------

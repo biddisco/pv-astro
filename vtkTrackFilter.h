@@ -25,14 +25,14 @@
 #include "vtkFloatArray.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
-#include <vtkstd/vector>
+#include <vector>
 
 class VTK_EXPORT vtkTrackFilter :  public vtkPolyDataAlgorithm
 {
 public:
 	static vtkTrackFilter* New();
 	//vtkTypeMacro(vtkTrackFilter, vtkPolyDataAlgorithm);
-	vtkTypeRevisionMacro(vtkTrackFilter,vtkPolyDataAlgorithm);
+	vtkTypeMacro(vtkTrackFilter,vtkPolyDataAlgorithm);
 
 	void PrintSelf(ostream& os, vtkIndent indent);
 

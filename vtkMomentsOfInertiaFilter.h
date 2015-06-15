@@ -19,7 +19,7 @@
 #define __vtkMomentsOfInertiaFilter_h
 
 #include "vtkPointSetAlgorithm.h"
-#include <vtkstd/string> // some functions use as argument
+#include <string> // some functions use as argument
 
 enum MomentsMPIData 
 {
@@ -33,7 +33,7 @@ class VTK_EXPORT vtkMomentsOfInertiaFilter : public vtkPointSetAlgorithm
 {
 public:
   static vtkMomentsOfInertiaFilter *New();
-  vtkTypeRevisionMacro(vtkMomentsOfInertiaFilter,vtkPointSetAlgorithm);
+  vtkTypeMacro(vtkMomentsOfInertiaFilter,vtkPointSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
   // Description:
   // By defualt this filter uses the global controller,

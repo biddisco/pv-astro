@@ -33,7 +33,6 @@
 #include <string>
 
 
-vtkCxxRevisionMacro(vtkSQLiteReader, "$Revision: 1.0.1 $");
 vtkStandardNewMacro(vtkSQLiteReader);
 
 

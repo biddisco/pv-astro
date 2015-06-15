@@ -18,7 +18,7 @@
 #define __vtkProfileFilter_h
 #include "vtkTableAlgorithm.h" // super class
 #include "vtkStringArray.h" // some class variables are vtkStringArrays
-#include <vtkstd/vector>
+#include <vector>
 #include "vtkSmartPointer.h"
 #include "vtkFloatArray.h"
 //
@@ -56,7 +56,7 @@ class VTK_EXPORT vtkProfileFilter : public vtkTableAlgorithm
 {
 public:
   static vtkProfileFilter* New();
-  vtkTypeRevisionMacro(vtkProfileFilter, vtkTableAlgorithm);
+  vtkTypeMacro(vtkProfileFilter, vtkTableAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:

@@ -33,7 +33,7 @@ class VTK_EXPORT vtkCenterOfMassFilter : public vtkPointSetAlgorithm
 {
 public:
   static vtkCenterOfMassFilter *New();
-  vtkTypeRevisionMacro(vtkCenterOfMassFilter,vtkPointSetAlgorithm);
+  vtkTypeMacro(vtkCenterOfMassFilter,vtkPointSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
   // Description:
   // By defualt this filter uses the global controller,

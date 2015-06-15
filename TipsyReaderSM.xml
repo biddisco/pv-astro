@@ -63,9 +63,11 @@
       </StringVectorProperty>
 
       <Hints>
-        <Property name="MarkFileName" show="1"/>
+        <ReaderFactory extensions="tip"
+                       file_description="Tipsy particle files" />
+          <Property name="MarkFileName" show="1"/>
       </Hints>
-
+      
     </SourceProxy>
   </ProxyGroup>
 </ServerManagerConfiguration>
