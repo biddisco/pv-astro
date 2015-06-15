@@ -467,9 +467,9 @@ int vtkGadgetReader::RequestInformation(
 {
 	vtkInformation* outInfo = outputVector->GetInformationObject(0);
 	// means that the data set can be divided into an arbitrary number of pieces
-	outInfo->Set(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(),
-		-1);
-  
+//	outInfo->Set(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(), -1);
+    outInfo->Set(CAN_HANDLE_PIECE_REQUEST(), 1);
+ 
 
   this->PointDataArraySelection->AddArray("Mass");
   this->PointDataArraySelection->AddArray("Velocity");

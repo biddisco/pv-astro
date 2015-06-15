@@ -7,6 +7,7 @@
 #include <iostream>
 #include <math.h>
 #include <assert.h>
+#include <algorithm>
 #include "binner.hpp"
 
 using namespace Tipsy;

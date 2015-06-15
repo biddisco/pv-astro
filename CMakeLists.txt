@@ -142,10 +142,10 @@ ADD_PARAVIEW_PLUGIN(StrangeAttractorsPlugin "1.0"
   
 # For helper functions often used, will later include these in a single
 # VTK class.
-ADD_LIBRARY(AstroVizHelpers AstroVizHelpersLib/AstroVizHelpers.cxx)
+ADD_LIBRARY(AstroVizHelpers STATIC AstroVizHelpersLib/AstroVizHelpers.cxx)
 
 SET_TARGET_PROPERTIES(AstroVizHelpers PROPERTIES COMPILE_FLAGS "-fPIC")
-# TARGET_LINK_LIBRARIES(AstroVizHelpers vtkParallel)
+TARGET_LINK_LIBRARIES(AstroVizHelpers vtkParallelMPI vtkFiltersSources)
 
 TARGET_LINK_LIBRARIES(pv_astro AstroVizHelpers ) 
 SET_TARGET_PROPERTIES(pv_astro PROPERTIES COMPILE_FLAGS "${OpenMP_CXX_FLAGS}")

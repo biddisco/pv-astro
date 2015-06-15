@@ -4,6 +4,8 @@
   Module:    $RCSfile: AstroVizHelpers.cxx,v $
 =========================================================================*/
 #include "AstroVizHelpers.h"
+#include <algorithm>
+
 #include "vtkCell.h"
 #include "vtkCellArray.h"
 #include "vtkFloatArray.h"
